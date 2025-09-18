@@ -1,0 +1,263 @@
+@import "tailwindcss";
+
+/* --- reveal on scroll --- */
+.reveal { 
+  opacity: 0; 
+  transform: translateY(12px); 
+  transition: opacity .6s ease, transform .6s ease; 
+}
+.revealed { 
+  opacity: 1; 
+  transform: none; 
+}
+
+/* Keep in-page anchors from hiding under your sticky navbar (~56px tall) */
+[id] { scroll-margin-top: 56px; }
+
+/* --- centered scroll hint (uses child for bounce so X-centering isn't overridden) --- */
+.scroll-hint-center {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  pointer-events: none;   /* never intercept clicks */
+  transition: opacity .2s ease;
+}
+.scroll-hint-center > .bounce {
+  display: inline-block;
+  animation: bounceY 1.4s ease-in-out infinite;
+}
+@keyframes bounceY {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(10px); }
+}
+
+/* (legacy) diagonal chevron variant — safe to keep if you use it elsewhere */
+.scroll-hint {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #34d399; /* emerald-400-ish */
+}
+.scroll-hint__label { font-family: var(--font-mono, ui-monospace); font-size: 12px; opacity: .9; }
+.scroll-hint__chev {
+  width: 14px; height: 14px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  animation: bounceY 1.2s ease-in-out infinite;
+}
+
+/* optional fonts via CSS variables */
+:root {
+  --font-sans: "Inter", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, Menlo, Monaco;
+}
+html { font-family: var(--font-sans); }
+.font-mono { font-family: var(--font-mono); }
+
+/* subtle grid bg + vignette for flavor */
+body::before{
+  content:"";
+  position:fixed; inset:0; pointer-events:none; z-index:-1;
+  background:
+    radial-gradient(1000px 600px at 75% 25%, rgba(16,185,129,.08), transparent 60%),
+    radial-gradient(900px 500px at 20% 20%, rgba(56,189,248,.06), transparent 60%),
+    linear-gradient(180deg, #0a1a2b 0%, #071824 100%);
+}
+body::after{
+  content:"";
+  position:fixed; inset:0; pointer-events:none; z-index:-1;
+  background-image: radial-gradient(circle at 1px 1px, rgba(148,163,184,.085) 1px, transparent 0);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(ellipse at 50% -10%, black 50%, transparent 75%);
+}
+
+/* helper button styles */
+.btn-primary { @apply inline-flex items-center gap-1 px-4 py-2 rounded-lg bg-amber-400 text-slate-900 font-mono font-semibold hover:bg-amber-300 border border-amber-300 shadow; }
+.btn-outline { @apply inline-flex items-center gap-1 px-4 py-2 rounded-lg border border-white/10 hover:bg-white/5; }
+#download-card.hidden { display: none !important; }
+.btn-primary.hidden { display: none !important; }
+
+/* active nav underline */
+.nav-active { position: relative; }
+.nav-active::after { content:""; position:absolute; left:0; right:0; bottom:-10px; height:2px; background: rgb(52 211 153); border-radius:2px; }
+
+/* game overlay */
+.game-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: inherit;
+  background: rgba(2,6,23,.55);
+  backdrop-filter: blur(6px);
+  z-index: 30;
+}
+.game-overlay.hidden { display: none !important; }
+.game-overlay-card {
+  width: min(92%, 520px);
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: radial-gradient(480px 260px at 70% 0%, rgba(16,185,129,.16), transparent 60%), rgba(15,23,42,.92);
+  box-shadow: 0 20px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
+  padding: 22px;
+  text-align: center;
+}
+
+/* countdown overlay */
+.countdown-overlay{ position:absolute; inset:0; display:grid; place-items:center; border-radius:inherit; pointer-events:none; background: rgba(2,6,23,.35); backdrop-filter: blur(2px); z-index: 26; }
+.countdown-bubble{
+  font-family: var(--font-mono, ui-monospace);
+  font-weight: 800; font-size: clamp(48px, 7vw, 96px); color: #e2e8f0;
+  padding: 12px 28px; border-radius: 16px; border: 1px solid rgba(255,255,255,.12);
+  background: rgba(15,23,42,.8); box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  transform: scale(1); opacity: 1; transition: transform .25s ease, opacity .25s ease;
+}
+
+/* game card */
+.game-card {
+  border-radius: 22px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: radial-gradient(600px 400px at 40% 35%, rgba(16,185,129,.18), rgba(56,189,248,.12) 60%, rgba(15,23,42,.6) 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 20px 40px rgba(0,0,0,.45);
+}
+.game-card__inner { padding: 18px; }
+
+/* Auto-sized typewriter */
+.typewriter{
+  --n: 1;
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  margin: 0 1ch;
+  border-right: .12em solid #22c55e; /* caret */
+  width: 0;
+  animation:
+    typing 2.5s steps(var(--n)) forwards,
+    blink-caret .75s step-end infinite;
+}
+@keyframes typing { to { width: calc(var(--n) * 1ch + 0.25ch); } }
+@keyframes blink-caret {
+  from, to { border-color: transparent; }
+  50% { border-color: #22c55e; }
+}
+
+/* top easter-egg hint */
+.top-hint {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  background: rgba(15, 23, 42, 0.85);
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.08);
+  backdrop-filter: blur(4px);
+  animation: fadeIn .25s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, -6px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* Infinite marquee (ticker) */
+.ticker {
+  display: flex;
+  min-width: max-content;
+  animation: ticker 20s linear infinite;
+}
+.ticker:hover { animation-play-state: paused; }
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.ticker-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 18px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: default;
+}
+.ticker-icon {
+  width: 36px; height: 36px;
+  opacity: .85;
+  filter: saturate(0.9) contrast(1.05);
+  transition: transform .18s ease, opacity .18s ease, filter .18s ease;
+}
+.ticker-item:hover .ticker-icon,
+.ticker-item:focus-visible .ticker-icon {
+  transform: scale(1.08);
+  opacity: 1;
+  filter: none;
+}
+
+/* Hero corner glow blobs */
+.hero-glow { position: relative; }
+.hero-glow::before,
+.hero-glow::after {
+  content: "";
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(40px);
+  opacity: .50;
+  pointer-events: none;
+}
+.hero-glow::before {
+  width: 420px; height: 420px;
+  left: -180px; top: -60px;
+  background: radial-gradient(closest-side, rgba(56,189,248,.35), transparent 70%);
+}
+.hero-glow::after {
+  width: 360px; height: 360px;
+  left: 120px; bottom: -120px;
+  background: radial-gradient(closest-side, rgba(16,185,129,.35), transparent 70%);
+}
+@media (max-width: 768px) {
+  .hero-glow::before { left: -120px; top: -40px; width: 320px; height: 320px; }
+  .hero-glow::after  { left:  40px; bottom: -100px; width: 280px; height: 280px; }
+}
+
+/* Wider page wrapper */
+.wrap { @apply max-w-7xl mx-auto px-4 md:px-6; }
+@media (min-width: 1280px) { .wrap { max-width: 80rem; } }
+@media (min-width: 1536px) { .wrap { max-width: 88rem; } }
+
+/* Duck + fake cursor */
+.duck-layer {
+  position: fixed;
+  left: 0; top: 0;
+  width: 0; height: 0;
+  pointer-events: none;
+  z-index: 60;
+}
+.duck {
+  position: absolute;
+  width: 32px; height: 32px;   /* one frame */
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  will-change: transform, background-position;
+  transform: translate(-50%, -50%) scale(3.5);
+}
+.fake-cursor {
+  position: absolute;
+  width: 16px; height: 24px;
+  transform: translate(-10px, -2px);
+  background: currentColor;
+  color: #e2e8f0;
+  -webkit-clip-path: polygon(0 0, 0 100%, 40% 62%, 100% 88%, 40% 40%, 100% 0);
+  clip-path: polygon(0 0, 0 100%, 40% 62%, 100% 88%, 40% 40%, 100% 0);
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,.35));
+}
+/* When duck is dragging, hide real cursor globally */
+.cursor-none * { cursor: none !important; }
