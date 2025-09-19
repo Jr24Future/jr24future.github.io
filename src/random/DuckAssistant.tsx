@@ -1,6 +1,7 @@
 // src/components/DuckAssistant.tsx
 import { useEffect, useRef, useState } from "react";
 import { scrollToSection } from "../lib/scrollToSection";
+import gooseSpriteUrl from "../assets/goose-sprites.png"; // path relative to this file
 
 type Vec = { x: number; y: number };
 type Phase = "toMouse" | "toProjects" | "sleep" | "flyOff" | "exit" | null;
@@ -30,10 +31,9 @@ const LATER_INACTIVITY_MS = 10_000;  // 60_000 for prod
 const SPEED = 2.2;
 const FRAME_RATE_MS = 120;
 const SNAP = 12;
-const defaultSprite = new URL("goose-sprites.png", import.meta.env.BASE_URL).toString();
 
-export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl?: string }) {
-  const layerRef = useRef<HTMLDivElement>(null);
+
+export default function DuckAssistant({ spriteUrl = gooseSpriteUrl }: { spriteUrl?: string }) {  const layerRef = useRef<HTMLDivElement>(null);
   const duckRef  = useRef<HTMLDivElement>(null);
   const fakeRef  = useRef<HTMLDivElement>(null);
 
