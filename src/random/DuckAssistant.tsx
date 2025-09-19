@@ -30,9 +30,9 @@ const LATER_INACTIVITY_MS = 10_000;  // 60_000 for prod
 const SPEED = 2.2;
 const FRAME_RATE_MS = 120;
 const SNAP = 12;
+const defaultSprite = `${import.meta.env.BASE_URL}goose-sprites.png`;
 
-export default function DuckAssistant({ spriteUrl = "goose-sprites.png" }: { spriteUrl?: string }) {
-  const layerRef = useRef<HTMLDivElement>(null);
+export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl?: string }) {  const layerRef = useRef<HTMLDivElement>(null);
   const duckRef  = useRef<HTMLDivElement>(null);
   const fakeRef  = useRef<HTMLDivElement>(null);
 
