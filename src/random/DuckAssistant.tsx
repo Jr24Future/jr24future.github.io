@@ -48,7 +48,7 @@ const ROW_GETUP = 0;     // row 1, play once
 const GETUP_COLS = 6;    // tweak if row 1 has different length
 
 // Timings
-const FIRST_INACTIVITY_MS = 5_000; // first time: 60s
+const FIRST_INACTIVITY_MS = 60_000; // first time: 60s
 const LATER_INACTIVITY_MS = 60_000; // later: 60s again
 const SPEED = 2.2;
 const FRAME_RATE_MS = 120;
