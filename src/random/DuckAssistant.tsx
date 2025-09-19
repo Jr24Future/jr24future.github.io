@@ -32,7 +32,8 @@ const FRAME_RATE_MS = 120;
 const SNAP = 12;
 const defaultSprite = `${import.meta.env.BASE_URL}goose-sprites.png`;
 
-export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl?: string }) {  const layerRef = useRef<HTMLDivElement>(null);
+export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl?: string }) {  
+  const layerRef = useRef<HTMLDivElement>(null);
   const duckRef  = useRef<HTMLDivElement>(null);
   const fakeRef  = useRef<HTMLDivElement>(null);
 
