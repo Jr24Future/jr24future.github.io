@@ -11,29 +11,7 @@
   transform: none; 
 }
 
-/* Keep in-page anchors from hiding under your sticky navbar (~56px tall) */
-[id] { scroll-margin-top: 56px; }
-
-/* --- centered scroll hint (uses child for bounce so X-centering isn't overridden) --- */
-.scroll-hint-center {
-  position: fixed;
-  bottom: 40px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 30;
-  pointer-events: none;   /* never intercept clicks */
-  transition: opacity .2s ease;
-}
-.scroll-hint-center > .bounce {
-  display: inline-block;
-  animation: bounceY 1.4s ease-in-out infinite;
-}
-@keyframes bounceY {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(10px); }
-}
-
-/* (legacy) diagonal chevron variant — safe to keep if you use it elsewhere */
+/* --- bouncing scroll hint --- */
 .scroll-hint {
   position: fixed;
   left: 50%;
@@ -51,7 +29,22 @@
   border-right: 2px solid currentColor;
   border-bottom: 2px solid currentColor;
   transform: rotate(45deg);
-  animation: bounceY 1.2s ease-in-out infinite;
+  animation: bounce 1.2s ease-in-out infinite;
+}
+
+.scroll-hint-center {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  animation: bounce 1.4s ease-in-out infinite;
+  pointer-events: none;  
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(10px); }
 }
 
 /* optional fonts via CSS variables */
@@ -88,7 +81,6 @@ body::after{
 /* active nav underline */
 .nav-active { position: relative; }
 .nav-active::after { content:""; position:absolute; left:0; right:0; bottom:-10px; height:2px; background: rgb(52 211 153); border-radius:2px; }
-
 /* game overlay */
 .game-overlay {
   position: absolute;
@@ -120,8 +112,6 @@ body::after{
   background: rgba(15,23,42,.8); box-shadow: 0 10px 30px rgba(0,0,0,.35);
   transform: scale(1); opacity: 1; transition: transform .25s ease, opacity .25s ease;
 }
-
-/* game card */
 .game-card {
   border-radius: 22px;
   border: 1px solid rgba(255,255,255,.08);
@@ -132,31 +122,39 @@ body::after{
 
 /* Auto-sized typewriter */
 .typewriter{
-  --n: 1;
+  --n: 1; /* fallback if JS hasn't set it yet */
   display: inline-block;
   overflow: hidden;
   white-space: nowrap;
   margin: 0 1ch;
-  border-right: .12em solid #22c55e; /* caret */
+
+  /* caret */
+  border-right: .12em solid #22c55e;
+
+
+  /* animate width to exactly N characters, in N steps */
   width: 0;
   animation:
     typing 2.5s steps(var(--n)) forwards,
     blink-caret .75s step-end infinite;
 }
-@keyframes typing { to { width: calc(var(--n) * 1ch + 0.25ch); } }
+
+@keyframes typing {
+  to { width: calc(var(--n) * 1ch + 0.25ch); }
+}
+
 @keyframes blink-caret {
   from, to { border-color: transparent; }
   50% { border-color: #22c55e; }
 }
 
-/* top easter-egg hint */
 .top-hint {
   position: fixed;
   top: 16px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 40;
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(15, 23, 42, 0.85); /* slate-900/85 */
   padding: 6px 12px;
   border-radius: 8px;
   border: 1px solid rgba(255,255,255,.08);
@@ -168,17 +166,20 @@ body::after{
   to   { opacity: 1; transform: translate(-50%, 0); }
 }
 
-/* Infinite marquee (ticker) */
+/* Infinite marquee (duplicate items + shift by one set) */
 .ticker {
   display: flex;
-  min-width: max-content;
+  min-width: max-content;           /* span full content width */
   animation: ticker 20s linear infinite;
 }
 .ticker:hover { animation-play-state: paused; }
+
 @keyframes ticker {
   from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
+  to   { transform: translateX(-50%); } /* exactly one set’s width */
 }
+
+/* Icon look & hover/focus micro-interaction */
 .ticker-item {
   display: inline-flex;
   align-items: center;
@@ -203,7 +204,9 @@ body::after{
 }
 
 /* Hero corner glow blobs */
-.hero-glow { position: relative; }
+.hero-glow {
+  position: relative; /* anchor the pseudo-elements */
+}
 .hero-glow::before,
 .hero-glow::after {
   content: "";
@@ -216,12 +219,12 @@ body::after{
 .hero-glow::before {
   width: 420px; height: 420px;
   left: -180px; top: -60px;
-  background: radial-gradient(closest-side, rgba(56,189,248,.35), transparent 70%);
+  background: radial-gradient(closest-side, rgba(56,189,248,.35), transparent 70%); /* cyan */
 }
 .hero-glow::after {
   width: 360px; height: 360px;
   left: 120px; bottom: -120px;
-  background: radial-gradient(closest-side, rgba(16,185,129,.35), transparent 70%);
+  background: radial-gradient(closest-side, rgba(16,185,129,.35), transparent 70%); /* emerald */
 }
 @media (max-width: 768px) {
   .hero-glow::before { left: -120px; top: -40px; width: 320px; height: 320px; }
@@ -229,11 +232,17 @@ body::after{
 }
 
 /* Wider page wrapper */
-.wrap { @apply max-w-7xl mx-auto px-4 md:px-6; }
-@media (min-width: 1280px) { .wrap { max-width: 80rem; } }
-@media (min-width: 1536px) { .wrap { max-width: 88rem; } }
+.wrap {
+  /* 6xl ≈ 72rem; bump to 7xl/8xl and soften side padding on large screens */
+  @apply max-w-7xl mx-auto px-4 md:px-6;
+}
+@media (min-width: 1280px) {        /* xl */
+  .wrap { max-width: 80rem; }       /* 1280px → 1280 max width */
+}
+@media (min-width: 1536px) {        /* 2xl */
+  .wrap { max-width: 88rem; }       /* 1408px */
+}
 
-/* Duck + fake cursor */
 .duck-layer {
   position: fixed;
   left: 0; top: 0;
@@ -243,11 +252,12 @@ body::after{
 }
 .duck {
   position: absolute;
-  width: 32px; height: 32px;   /* one frame */
+  width: 32px;                 /* one frame */
+  height: 32px;
   background-repeat: no-repeat;
   image-rendering: pixelated;
   will-change: transform, background-position;
-  transform: translate(-50%, -50%) scale(3.5);
+  transform: translate(-50%, -50%) scale(3.5); /* size on screen */
 }
 .fake-cursor {
   position: absolute;
@@ -261,3 +271,6 @@ body::after{
 }
 /* When duck is dragging, hide real cursor globally */
 .cursor-none * { cursor: none !important; }
+
+
+

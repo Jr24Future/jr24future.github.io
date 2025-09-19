@@ -1,99 +1,133 @@
-// src/components/DuckAssistant.tsx
 import { useEffect, useRef, useState } from "react";
 import { scrollToSection } from "../lib/scrollToSection";
 
 type Vec = { x: number; y: number };
-type Phase = "toMouse" | "toProjects" | "sleep" | "flyOff" | "exit" | null;
 
-/* ===== Sprite sheet geometry (480x544, 15x17 grid of 32x32 cells) ===== */
-const SHEET_W = 480, SHEET_H = 544;
-const FRAME_W = 32, FRAME_H = 32;
+// PHASES
+type Phase =
+  | "toNav"
+  | "sitInit"
+  | "sitLoop"
+  | "getUp"
+  | "walkAway"
+  | "sleep"
+  | "flyOff"
+  | "exit"
+  | null;
 
-/* Walk rows: row 6 (R→L) & row 7 (L→R), 0-based: 5 & 6 */
-const ROW_LEFT  = 5;   // walk right→left
-const ROW_RIGHT = 6;   // walk left→right
+// === SPRITE SHEET GEOMETRY ===
+const SHEET_W = 480;
+const SHEET_H = 544;
+const FRAME_W = 32;
+const FRAME_H = 32;
+
+// 1-based rows from your sheet → 0-based indices here
+const ROW_WALK_L = 5; // row 6: walk right→left
+const ROW_WALK_R = 6; // row 7: walk left→right
 const WALK_COLS = 4;
 
-/* Sleep rows: 14 & 15 → 0-based 13 & 14 */
+// Sleep (rows 14/15)
 const ROW_SLEEP_A = 13;
 const ROW_SLEEP_B = 14;
-const SLEEP_COLS  = 6;   // adjust if needed
+const SLEEP_COLS = 6;
 
-/* Fly rows: 12 & 13 → 0-based 11 & 12 */
+// Fly off (rows 12/13)
 const ROW_FLY_A = 11;
 const ROW_FLY_B = 12;
-const FLY_COLS  = 10;    // adjust if needed
+const FLY_COLS = 10;
 
-/* ===== Timings & motion ===== */
-const FIRST_INACTIVITY_MS = 4000;  // 60_000 for prod
-const LATER_INACTIVITY_MS = 10_000;  // 60_000 for prod
+// NEW: navbar parking animation
+const ROW_SIT_ONCE = 9;  // row 10, play once when arriving
+const SIT_COLS = 6;      // tweak if your row 10 has different length
+
+const ROW_IDLE_LOOP = 8; // row 9, looping idle
+const IDLE_COLS = 4;     // tweak if your row 9 has different length
+
+// NEW: getting up before leaving
+const ROW_GETUP = 0;     // row 1, play once
+const GETUP_COLS = 6;    // tweak if row 1 has different length
+
+// Timings
+const FIRST_INACTIVITY_MS = 5_000; // first time: 60s
+const LATER_INACTIVITY_MS = 60_000; // later: 60s again
 const SPEED = 2.2;
 const FRAME_RATE_MS = 120;
+const IDLE_FRAME_RATE_MS = 380;
 const SNAP = 12;
+
+// where to stand relative to the _projects link (in px)
+const STAND_GAP_X = 26;
+const STAND_Y = 18; 
+const BUBBLE_SEQUENCE = ["quack!", "check", "projects"];
+
+// how often to show the "quack!" bubble while idling (every N idle loops)
+const QUACK_EVERY_LOOPS = 3;
+
 const defaultSprite = `${import.meta.env.BASE_URL}goose-sprites.png`;
 
-export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl?: string }) {  
+export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl?: string }) {
   const layerRef = useRef<HTMLDivElement>(null);
-  const duckRef  = useRef<HTMLDivElement>(null);
-  const fakeRef  = useRef<HTMLDivElement>(null);
+  const duckRef = useRef<HTMLDivElement>(null);
 
   const [active, setActive] = useState(false);
-  const [dragging, setDragging] = useState(false);
+  const [overlayActive, setOverlayActive] = useState(false); // full-screen invisible button
+  const [quack, setQuack] = useState(false);
 
-  const lastMouse = useRef<Vec>({ x: window.innerWidth * 0.6, y: window.innerHeight * 0.6 });
-  const rafRef    = useRef<number | null>(null);
-  const frameRef  = useRef(0);
-  const rowRef    = useRef(ROW_RIGHT);
-  const posRef    = useRef<Vec>({ x: -200, y: -200 });
+  const lastMouse = useRef<Vec>({ x: innerWidth * 0.6, y: innerHeight * 0.6 });
+  const rafRef = useRef<number | null>(null);
+  const frameRef = useRef(0);
+  const rowRef = useRef(ROW_WALK_R);
+  const posRef = useRef<Vec>({ x: -200, y: -200 });
   const targetRef = useRef<Vec | null>(null);
-  const phaseRef  = useRef<Phase>(null);
+  const phaseRef = useRef<Phase>(null);
 
   const lastFrameTime = useRef(0);
-  const firstRunDone  = useRef(false);
-  const playingRef    = useRef(true); // pause when hidden/unfocused
+  const firstRunDone = useRef(false);
+  const playingRef = useRef(true);
 
-  /* Track mouse for first escort */
+  const idleLoopCount = useRef(0);
+  const quackTimer = useRef<number | null>(null);
+
+  const bubbleIdx = useRef(0);
+
+
+  // Track mouse for first time targeting
   useEffect(() => {
     const mm = (e: MouseEvent) => (lastMouse.current = { x: e.clientX, y: e.clientY });
-    window.addEventListener("mousemove", mm, { passive: true });
-    return () => window.removeEventListener("mousemove", mm);
+    addEventListener("mousemove", mm, { passive: true });
+    return () => removeEventListener("mousemove", mm);
   }, []);
 
-  /* Pause/resume on tab visibility/focus */
+  // Pause / resume when tab hidden or window blurred
   useEffect(() => {
     const onVis = () => {
       playingRef.current = !document.hidden && document.hasFocus();
-      if (playingRef.current && active && !rafRef.current) {
-        rafRef.current = requestAnimationFrame(tick);
-      }
+      if (playingRef.current && active && !rafRef.current) rafRef.current = requestAnimationFrame(tick);
     };
-    const onBlur = () => { playingRef.current = false; };
-    const onFocus = () => { onVis(); };
-
-    document.addEventListener("visibilitychange", onVis);
-    window.addEventListener("blur", onBlur);
-    window.addEventListener("focus", onFocus);
+    addEventListener("visibilitychange", onVis);
+    addEventListener("blur", () => (playingRef.current = false));
+    addEventListener("focus", onVis);
     return () => {
-      document.removeEventListener("visibilitychange", onVis);
-      window.removeEventListener("blur", onBlur);
-      window.removeEventListener("focus", onFocus);
+      removeEventListener("visibilitychange", onVis);
+      removeEventListener("blur", () => (playingRef.current = false));
+      removeEventListener("focus", onVis);
     };
   }, [active]);
 
-  /* Inactivity: first escort, later sleep; activity while sleeping => flyOff */
+  // Inactivity → first: navbar parking. Later: sleep. Activity during sleep → fly off.
   useEffect(() => {
     let timer: number | null = null;
 
     const schedule = () => {
-      if (timer) window.clearTimeout(timer);
+      if (timer) clearTimeout(timer);
       const wait = firstRunDone.current ? LATER_INACTIVITY_MS : FIRST_INACTIVITY_MS;
       timer = window.setTimeout(() => {
-        firstRunDone.current ? startSleep() : startEscort();
+        firstRunDone.current ? startSleep() : startNavVisit();
       }, wait);
     };
 
     const reset = () => {
-      if (timer) window.clearTimeout(timer);
+      if (timer) clearTimeout(timer);
       if (active && phaseRef.current === "sleep") {
         startFlyOff();
         return;
@@ -101,73 +135,93 @@ export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl
       schedule();
     };
 
-    ["mousemove","keydown","wheel","scroll","touchstart"].forEach((ev) =>
-      window.addEventListener(ev, reset, { passive: true })
+    ["mousemove", "keydown", "wheel", "scroll", "touchstart"].forEach((ev) =>
+      addEventListener(ev, reset, { passive: true })
     );
     schedule();
 
     return () => {
-      ["mousemove","keydown","wheel","scroll","touchstart"].forEach((ev) =>
-        window.removeEventListener(ev, reset)
+      ["mousemove", "keydown", "wheel", "scroll", "touchstart"].forEach((ev) =>
+        removeEventListener(ev, reset)
       );
-      if (timer) window.clearTimeout(timer);
+      if (timer) clearTimeout(timer);
     };
   }, [active]);
 
-  /* Helpers */
+  // Helpers
   function setSheetOnce() {
     if (!duckRef.current) return;
     duckRef.current.style.backgroundImage = `url(${spriteUrl})`;
     duckRef.current.style.backgroundSize = `${SHEET_W}px ${SHEET_H}px`;
+    duckRef.current.style.backgroundRepeat = "no-repeat";
   }
   function baseStart(from: Vec) {
+    bubbleIdx.current = 0;
     posRef.current = from;
     setActive(true);
-    setDragging(false);
+    setOverlayActive(false);
     frameRef.current = 0;
     lastFrameTime.current = 0;
+    idleLoopCount.current = 0;
+    setQuack(false);
+    if (quackTimer.current) {
+      clearTimeout(quackTimer.current);
+      quackTimer.current = null;
+    }
     setSheetOnce();
     if (!rafRef.current) rafRef.current = requestAnimationFrame(tick);
   }
   function stopDuck() {
     setActive(false);
-    setDragging(false);
-    targetRef.current = null;
-    phaseRef.current = null;
+    setOverlayActive(false);
+    setQuack(false);
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     rafRef.current = null;
-    document.body.classList.remove("cursor-none");
+    phaseRef.current = null;
+    targetRef.current = null;
   }
   function stepTowards(p: Vec, t: Vec, d: number): Vec {
-    const dx = t.x - p.x, dy = t.y - p.y;
+    const dx = t.x - p.x,
+      dy = t.y - p.y;
     const dist = Math.hypot(dx, dy);
     if (dist <= d) return { ...t };
     return { x: p.x + (dx / dist) * d, y: p.y + (dy / dist) * d };
   }
 
-  /* Scenarios */
-  function startEscort() {
+  // === Scenarios ===
+
+  // FIRST inactivity: walk from a corner to navbar, park beside _projects_
+  function startNavVisit() {
     const corners: Vec[] = [
       { x: -40, y: -40 },
-      { x: window.innerWidth + 40, y: -40 },
-      { x: -40, y: window.innerHeight + 40 },
-      { x: window.innerWidth + 40, y: window.innerHeight + 40 },
+      { x: innerWidth + 40, y: -40 },
+      { x: -40, y: innerHeight + 40 },
+      { x: innerWidth + 40, y: innerHeight + 40 },
     ];
     const start = corners[(Math.random() * corners.length) | 0];
     baseStart(start);
 
-    phaseRef.current = "toMouse";
-    targetRef.current = { ...lastMouse.current };
-    rowRef.current = lastMouse.current.x > start.x ? ROW_RIGHT : ROW_LEFT;
+    // find projects link position
+    const projLink = document.querySelector('a[href="#projects"]') as HTMLElement | null;
+    let target: Vec = { x: innerWidth / 2 + STAND_GAP_X, y: 20 + STAND_Y }; // fallback
+    if (projLink) {
+      const r = projLink.getBoundingClientRect();
+      target = { x: r.right + STAND_GAP_X, y: r.top + STAND_Y };
+    }
+
+    phaseRef.current = "toNav";
+    targetRef.current = target;
+    rowRef.current = target.x >= start.x ? ROW_WALK_R : ROW_WALK_L;
   }
 
+  // LATER inactivity: sleep in a corner
   function startSleep() {
     const pad = 28;
     const corners: Vec[] = [
       { x: pad, y: pad },
-      { x: window.innerWidth - pad, y: pad },
-      { x: pad, y: window.innerHeight - pad },
-      { x: window.innerWidth - pad, y: window.innerHeight - pad },
+      { x: innerWidth - pad, y: pad },
+      { x: pad, y: innerHeight - pad },
+      { x: innerWidth - pad, y: innerHeight - pad },
     ];
     const start = corners[(Math.random() * corners.length) | 0];
     baseStart(start);
@@ -177,54 +231,103 @@ export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl
     rowRef.current = Math.random() < 0.5 ? ROW_SLEEP_A : ROW_SLEEP_B;
   }
 
+  // On user activity while sleeping
   function startFlyOff() {
     if (!active) return;
     phaseRef.current = "flyOff";
     const towardRight = Math.random() < 0.5;
     rowRef.current = towardRight ? ROW_FLY_B : ROW_FLY_A;
-    targetRef.current = towardRight
-      ? { x: window.innerWidth + 160, y: -80 }
-      : { x: -160, y: -80 };
-    setDragging(false);
-    document.body.classList.remove("cursor-none");
+    targetRef.current = towardRight ? { x: innerWidth + 160, y: -80 } : { x: -160, y: -80 };
     if (!rafRef.current) rafRef.current = requestAnimationFrame(tick);
   }
 
-  /* Animation loop */
+  // === Animation loop ===
   function tick(now: number) {
     if (!playingRef.current) {
       rafRef.current = requestAnimationFrame(tick);
       return;
     }
 
-    const colsForPhase =
-      phaseRef.current === "sleep" ? SLEEP_COLS :
-      phaseRef.current === "flyOff" ? FLY_COLS :
-      WALK_COLS;
+    // choose frame count per phase
+    const cols =
+      phaseRef.current === "sleep"
+        ? SLEEP_COLS
+        : phaseRef.current === "flyOff"
+        ? FLY_COLS
+        : phaseRef.current === "sitInit"
+        ? SIT_COLS
+        : phaseRef.current === "sitLoop"
+        ? IDLE_COLS
+        : phaseRef.current === "getUp"
+        ? GETUP_COLS
+        : WALK_COLS;
 
-    if (now - lastFrameTime.current >= FRAME_RATE_MS) {
-      frameRef.current = (frameRef.current + 1) % colsForPhase;
-      lastFrameTime.current = now;
+// how many frames to wait before advancing (per phase)
+const delay =
+  phaseRef.current === "sitLoop" ? IDLE_FRAME_RATE_MS : FRAME_RATE_MS;
+
+if (now - lastFrameTime.current >= delay) {
+  const prev = frameRef.current;
+  frameRef.current = (frameRef.current + 1) % cols;
+  lastFrameTime.current = now;
+
+  if (phaseRef.current === "sitLoop" && frameRef.current === 0 && prev === cols - 1) {
+    idleLoopCount.current += 1;
+    if (idleLoopCount.current % QUACK_EVERY_LOOPS === 0) {
+      setQuack(true);
+      if (quackTimer.current) clearTimeout(quackTimer.current);
+      quackTimer.current = window.setTimeout(() => setQuack(false), 1200);
+      bubbleIdx.current = (bubbleIdx.current + 1) % BUBBLE_SEQUENCE.length;
     }
+  }
+}
 
-    // Sleeping: animate in place
-    if (phaseRef.current === "sleep") {
+
+    // PHASES WITHOUT MOVEMENT
+    if (phaseRef.current === "sleep" || phaseRef.current === "sitInit" || phaseRef.current === "sitLoop" || phaseRef.current === "getUp") {
+      // set proper row for these phases
+      if (phaseRef.current === "sleep") {
+        // keep chosen sleep row
+      } else if (phaseRef.current === "sitInit") {
+        rowRef.current = ROW_SIT_ONCE;
+      } else if (phaseRef.current === "sitLoop") {
+        rowRef.current = ROW_IDLE_LOOP;
+      } else if (phaseRef.current === "getUp") {
+        rowRef.current = ROW_GETUP;
+      }
+
       if (duckRef.current) {
         const frameX = -FRAME_W * frameRef.current;
         const frameY = -FRAME_H * rowRef.current;
         duckRef.current.style.backgroundPosition = `${frameX}px ${frameY}px`;
         duckRef.current.style.transform = `translate(${posRef.current.x}px, ${posRef.current.y}px) scale(3.5)`;
       }
+
+      // handle transitions for the non-moving sequences
+      if (phaseRef.current === "sitInit" && frameRef.current === SIT_COLS - 1) {
+        // when sit-once finishes, enter idle loop + enable click overlay
+        phaseRef.current = "sitLoop";
+        setOverlayActive(true);
+      }
+
+      if (phaseRef.current === "getUp" && frameRef.current === GETUP_COLS - 1) {
+        // finished getting up → start walking away off-screen
+        phaseRef.current = "walkAway";
+        const goRight = Math.random() < 0.5;
+        rowRef.current = goRight ? ROW_WALK_R : ROW_WALK_L;
+        targetRef.current = goRight ? { x: innerWidth + 160, y: -60 } : { x: -160, y: -60 };
+      }
+
       rafRef.current = requestAnimationFrame(tick);
       return;
     }
 
+    // PHASES WITH MOVEMENT (toNav, walkAway, flyOff)
     const target = targetRef.current;
     if (target) {
-      if (phaseRef.current === "toMouse" || phaseRef.current === "toProjects") {
-        rowRef.current = target.x >= posRef.current.x ? ROW_RIGHT : ROW_LEFT;
+      if (phaseRef.current === "toNav" || phaseRef.current === "walkAway") {
+        rowRef.current = target.x >= posRef.current.x ? ROW_WALK_R : ROW_WALK_L;
       }
-
       const next = stepTowards(posRef.current, target, SPEED);
       posRef.current = next;
 
@@ -234,46 +337,14 @@ export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl
         duckRef.current.style.backgroundPosition = `${frameX}px ${frameY}px`;
         duckRef.current.style.transform = `translate(${next.x}px, ${next.y}px) scale(3.5)`;
       }
-      if (dragging && fakeRef.current) {
-        fakeRef.current.style.transform = `translate(${next.x}px, ${next.y}px)`;
-      }
 
-      // Arrival
+      // Arrived?
       if (Math.hypot(target.x - next.x, target.y - next.y) <= SNAP) {
-        if (phaseRef.current === "toMouse") {
-          // Grab fake cursor & go to projects link position
-          setDragging(true);
-          document.body.classList.add("cursor-none");
-
-          const projLink = document.querySelector('a[href="#projects"]') as HTMLElement | null;
-          let dest: Vec | null = null;
-          if (projLink) {
-            const r = projLink.getBoundingClientRect();
-            dest = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-          } else {
-            const section = document.getElementById("projects");
-            if (section) {
-              const r = section.getBoundingClientRect();
-              dest = { x: r.left + r.width / 2, y: r.top + 16 };
-            } else {
-              dest = { x: window.innerWidth / 2, y: 24 };
-            }
-          }
-          phaseRef.current = "toProjects";
-          targetRef.current = dest!;
-        }
-        else if (phaseRef.current === "toProjects") {
-          // Drop fake cursor, smooth-scroll to #projects (JS offset), then exit
-          setDragging(false);
-          document.body.classList.remove("cursor-none");
-
-          scrollToSection("#projects", 56);  // <- single, reliable scroll
-
-          firstRunDone.current = true;
-          phaseRef.current = "exit";
-          targetRef.current = { x: window.innerWidth + 160, y: -80 };
-        }
-        else if (phaseRef.current === "flyOff" || phaseRef.current === "exit") {
+        if (phaseRef.current === "toNav") {
+          // park: play row 10 once, then idle loop row 9
+          phaseRef.current = "sitInit";
+          frameRef.current = 0;
+        } else if (phaseRef.current === "walkAway" || phaseRef.current === "flyOff") {
           stopDuck();
         }
       }
@@ -282,19 +353,60 @@ export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl
     rafRef.current = requestAnimationFrame(tick);
   }
 
-  /* Render */
+  // CLICK ANYWHERE WHILE IDLING → scroll to projects, then get up + walk away
+  const handleOverlayClick = () => {
+    setOverlayActive(false);
+    scrollToSection("#projects", 56);
+    if (!firstRunDone.current) firstRunDone.current = true;
+    // play get-up animation (row 1), then walk away (rows 6/7)
+    if (phaseRef.current === "sitInit" || phaseRef.current === "sitLoop") {
+      phaseRef.current = "getUp";
+      frameRef.current = 0;
+    }
+  };
+
+  // RENDER
   if (!active) return null;
 
+  // quack bubble position relative to duck
+  const bubbleStyle: React.CSSProperties = {
+    position: "fixed",
+    left: posRef.current.x + 28,
+    top: posRef.current.y - 24,
+  };
+
   return (
-    <div ref={layerRef} className="duck-layer">
-      <div
-        ref={duckRef}
-        className="duck"
-        aria-hidden
-        // background is set once in setSheetOnce(); we don't reassign it here
-        style={{ transform: `translate(${posRef.current.x}px, ${posRef.current.y}px) scale(3.5)` }}
-      />
-      {dragging && <div ref={fakeRef} className="fake-cursor" aria-hidden />}
-    </div>
+    <>
+      {overlayActive && (
+        <button
+          aria-label="go to projects"
+          onClick={handleOverlayClick}
+          className="fixed inset-0 z-[55] bg-transparent"
+        />
+      )}
+
+      {quack && (
+        <div
+          className="z-[61] select-none pointer-events-none px-2 py-1 rounded-lg border border-white/10 bg-slate-900/80 text-emerald-300 font-mono text-xs shadow"
+          style={bubbleStyle}
+        >
+          {BUBBLE_SEQUENCE[(bubbleIdx.current + BUBBLE_SEQUENCE.length - 1) % BUBBLE_SEQUENCE.length]}
+        </div>
+      )}
+
+      <div ref={layerRef} className="duck-layer">
+        <div
+          ref={duckRef}
+          className="duck"
+          aria-hidden
+          style={{
+            transform: `translate(${posRef.current.x}px, ${posRef.current.y}px) scale(3.5)`,
+            backgroundImage: `url(${spriteUrl})`,
+            backgroundSize: `${SHEET_W}px ${SHEET_H}px`,
+            backgroundRepeat: "no-repeat",
+          }}
+        />
+      </div>
+    </>
   );
 }
