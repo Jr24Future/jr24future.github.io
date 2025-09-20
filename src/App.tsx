@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import About from "./components/About";
@@ -37,6 +37,19 @@ export default function App() {
   // ✅ ACTIVATE the global hash-link handler (56px ≈ your sticky header height)
   useHashLinkScroll(56);
 
+  // NEW: gently nudge the page down on first load so there's room to scroll up.
+  useEffect(() => {
+    // Only if there's no hash (so deep-linking still lands exactly) and we're truly at the top.
+    if (!location.hash && (window.scrollY ?? 0) < 2) {
+      // Avoid browsers restoring prior scroll pos
+      if ("scrollRestoration" in history) {
+        (history as any).scrollRestoration = "manual";
+      }
+      // Small, instant nudge. (Use 24–40 if you want more headroom.)
+      window.scrollTo(0, 24);
+    }
+  }, []);
+
   useEffect(() => {
     // Reveal on scroll
     const revealables = Array.from(document.querySelectorAll<HTMLElement>(".reveal"));
@@ -53,14 +66,21 @@ export default function App() {
     );
     revealables.forEach(el => io.observe(el));
 
-    // Hide the arrow once the user actually scrolls down a bit
+    // Track last Y so we know when user scrolls upward
+    const lastY = { current: window.scrollY || 0 };
+
     const onScroll = () => {
       const y = window.scrollY || 0;
+      const goingUp = y < lastY.current;
+      lastY.current = y;
+
+      // Hide the down-arrow once user scrolls down a bit
       if (y > 60 && showHint) setShowHint(false);
 
-      // Easter egg only when truly at top (after arrow has been hidden once)
-      const atTop = y <= 5;
-      const shouldShowTop = atTop && !showHint;
+      // Show the TopHint when the user is at the top and moving upward
+      // (Works immediately thanks to the initial 24px nudge.)
+      const atTop = y <= 2;
+      const shouldShowTop = atTop && goingUp && !showHint;
       setShowTopHint(shouldShowTop);
     };
 

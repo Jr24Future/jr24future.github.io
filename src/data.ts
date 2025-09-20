@@ -3,7 +3,7 @@ export const site = {
   name: "Erroll Barker",
   role: "Software Engineer",
   blurb:
-    "Sit back, relax, and enjoy a cup of coffee. Play a couple classic arcade games, or explore what I’ve been building.",
+    "Sit back, relax, and enjoy a cup of coffee. Play classic arcade games, or explore what I’ve been building otherwise sit around and meet the Goose",
   github: "https://github.com/Jr24Future",
   linkedin: "https://www.linkedin.com/in/your-handle",
   email: "errollbarker1234@gmail.com",

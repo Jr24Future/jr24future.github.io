@@ -1,79 +1,125 @@
+// src/components/DuckAssistant.tsx
 import { useEffect, useRef, useState } from "react";
 import { scrollToSection } from "../lib/scrollToSection";
 
 type Vec = { x: number; y: number };
-
-// PHASES
 type Phase =
+  | "toMouse"
   | "toNav"
   | "sitInit"
   | "sitLoop"
   | "getUp"
   | "walkAway"
-  | "sleep"
+  // second AFK sequence:
+  | "sleepWalkIn"   // walking from a corner to central spot
+  | "sleepSettle"   // settling one-shot (row14 0→5 OR row15 14→11)
+  | "sleepLoop"     // sleeping loop (row14 6→10 OR row15 10→6)
+  | "sleepWakeFin"  // on activity, finishing tail (row14 11→14 OR row15 5→0)
   | "flyOff"
   | "exit"
   | null;
 
-// === SPRITE SHEET GEOMETRY ===
+// ===== Sheet geometry (32x32 cells on a 480x544 sheet) =====
 const SHEET_W = 480;
 const SHEET_H = 544;
 const FRAME_W = 32;
 const FRAME_H = 32;
 
-// 1-based rows from your sheet → 0-based indices here
-const ROW_WALK_L = 5; // row 6: walk right→left
-const ROW_WALK_R = 6; // row 7: walk left→right
+// Rows (0-based)
+const ROW_WALK_L = 5; // row 6: walk right→left (facing left)
+const ROW_WALK_R = 6; // row 7: walk left→right (facing right)
 const WALK_COLS = 4;
 
-// Sleep (rows 14/15)
-const ROW_SLEEP_A = 13;
-const ROW_SLEEP_B = 14;
-const SLEEP_COLS = 6;
+const ROW_SLEEP_14 = 13; // row 14
+const ROW_SLEEP_15 = 14; // row 15
 
-// Fly off (rows 12/13)
-const ROW_FLY_A = 11;
-const ROW_FLY_B = 12;
-const FLY_COLS = 10;
+const ROW_FLY_12 = 11; // row 12 (one facing)
+const ROW_FLY_13 = 12; // row 13 (the other facing)
 
-// NEW: navbar parking animation
-const ROW_SIT_ONCE = 9;  // row 10, play once when arriving
-const SIT_COLS = 6;      // tweak if your row 10 has different length
+// Sit by projects
+const ROW_SIT_ONCE = 9;  // row 10 — play once
+const ROW_IDLE_LOOP = 8; // row 9 — loop
+const ROW_GETUP = 0;     // row 1 — play once
 
-const ROW_IDLE_LOOP = 8; // row 9, looping idle
-const IDLE_COLS = 4;     // tweak if your row 9 has different length
-
-// NEW: getting up before leaving
-const ROW_GETUP = 0;     // row 1, play once
-const GETUP_COLS = 6;    // tweak if row 1 has different length
+// Generic counts (non-custom rows)
+const SIT_COLS = 6;
+const IDLE_COLS = 4;
+const GETUP_COLS = 6;
 
 // Timings
-const FIRST_INACTIVITY_MS = 60_000; // first time: 60s
-const LATER_INACTIVITY_MS = 60_000; // later: 60s again
-const SPEED = 2.2;
+const FIRST_INACTIVITY_MS = 60_000;
+const LATER_INACTIVITY_MS = 60_000;
 const FRAME_RATE_MS = 120;
-const IDLE_FRAME_RATE_MS = 380;
+const IDLE_FRAME_RATE_MS = 300; 
+const SPEED = 2.2;
 const SNAP = 12;
 
-// where to stand relative to the _projects link (in px)
-const STAND_GAP_X = 26;
-const STAND_Y = 18; 
-const BUBBLE_SEQUENCE = ["quack!", "check", "projects"];
+// Park to the RIGHT of the _projects tab
+const STAND_GAP_X = 26; // horizontal gap from tab’s right edge
+const STAND_Y = 18;     // slight drop below baseline
 
-// how often to show the "quack!" bubble while idling (every N idle loops)
-const QUACK_EVERY_LOOPS = 3;
+// Speech bubble cycling
+const QUACK_EVERY_LOOPS = 2;
+const BUBBLE_SEQUENCE = ["Quack!", "Click", "Projects"];
 
 const defaultSprite = `${import.meta.env.BASE_URL}goose-sprites.png`;
+
+/* ---------------------------------------
+   Sleep/fly frame sequences (0-based)
+--------------------------------------- */
+
+// Row 14 (left-facing variant, typically):
+// settle: 0→5 once, loop: 6→10, wake finish: 11→14 once
+const S14_SETTLE_FWD = [0, 1, 2, 3, 4, 5];
+const S14_LOOP_FWD   = [6, 7, 8, 9, 10];
+const S14_WAKE_FWD   = [11, 12, 13, 14];
+
+// Row 15 (right-facing variant, mirrored):
+// settle: 14→11 once, loop: 10→6 (reverse), wake: 5→0 once
+const S15_SETTLE_REV = [14, 13, 12, 11];
+const S15_LOOP_REV   = [10, 9, 8, 7, 6];
+const S15_WAKE_REV   = [5, 4, 3, 2, 1, 0];
+
+// Fly rows: loop 4↔5
+const FLY12_LOOP = [4, 5]; // row 12
+const FLY13_LOOP = [5, 4]; // row 13
+
+// helpers
+function nextLoopIndex(arr: number[], i: number) {
+  return (i + 1) % arr.length;
+}
+function rand(min: number, max: number) {
+  return Math.random() * (max - min) + min;
+}
+function pickCentralSpot(): Vec {
+  const vw = window.innerWidth, vh = window.innerHeight;
+  return { x: rand(vw * 0.35, vw * 0.65), y: rand(vh * 0.35, vh * 0.6) };
+}
+// Left/right only exit, keep approx same Y
+function pickLateralExit(pos: Vec): Vec {
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const marginY = 40;
+  const y = Math.min(Math.max(pos.y, marginY), vh - marginY);
+  const goRight = vw - pos.x < pos.x;
+  return { x: goRight ? vw + 160 : -160, y };
+}
 
 export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl?: string }) {
   const layerRef = useRef<HTMLDivElement>(null);
   const duckRef = useRef<HTMLDivElement>(null);
+  const fakeRef = useRef<HTMLDivElement>(null);
+
+  // fake cursor
+  const fakePosRef = useRef<Vec>({ x: -9999, y: -9999 });
+  const fakeVisibleRef = useRef(false);
 
   const [active, setActive] = useState(false);
-  const [overlayActive, setOverlayActive] = useState(false); // full-screen invisible button
-  const [quack, setQuack] = useState(false);
+  const [overlayActive, setOverlayActive] = useState(false); // fullscreen click target
+  const [bubbleOn, setBubbleOn] = useState(false);
 
+  const dragging = useRef(false); // fake cursor being dragged
   const lastMouse = useRef<Vec>({ x: innerWidth * 0.6, y: innerHeight * 0.6 });
+
   const rafRef = useRef<number | null>(null);
   const frameRef = useRef(0);
   const rowRef = useRef(ROW_WALK_R);
@@ -81,24 +127,45 @@ export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl
   const targetRef = useRef<Vec | null>(null);
   const phaseRef = useRef<Phase>(null);
 
+  // sequence state for sleep/fly
+  const seqIndexRef = useRef(0);
+  const sleepRowRef = useRef<14 | 15 | null>(null);
+
   const lastFrameTime = useRef(0);
   const firstRunDone = useRef(false);
   const playingRef = useRef(true);
 
   const idleLoopCount = useRef(0);
-  const quackTimer = useRef<number | null>(null);
-
   const bubbleIdx = useRef(0);
+  const bubbleTimer = useRef<number | null>(null);
 
+  // inactivity freeze/resume
+  const inactivityTimerRef = useRef<number | null>(null);
+  function clearInactivityTimer() {
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+      inactivityTimerRef.current = null;
+    }
+  }
+  function scheduleInactivityTimer() {
+    if (active) return;
 
-  // Track mouse for first time targeting
+    clearInactivityTimer();
+    const wait = firstRunDone.current ? LATER_INACTIVITY_MS : FIRST_INACTIVITY_MS;
+    inactivityTimerRef.current = window.setTimeout(() => {
+      if (active) return;
+      firstRunDone.current ? startSleepWalkIn() : startEscort();
+    }, wait);
+  }
+
+  // track real mouse
   useEffect(() => {
     const mm = (e: MouseEvent) => (lastMouse.current = { x: e.clientX, y: e.clientY });
     addEventListener("mousemove", mm, { passive: true });
     return () => removeEventListener("mousemove", mm);
   }, []);
 
-  // Pause / resume when tab hidden or window blurred
+  // pause on hidden/blur
   useEffect(() => {
     const onVis = () => {
       playingRef.current = !document.hidden && document.hasFocus();
@@ -114,41 +181,36 @@ export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl
     };
   }, [active]);
 
-  // Inactivity → first: navbar parking. Later: sleep. Activity during sleep → fly off.
+  // inactivity: first escort run; later sleep (walk in); user activity during sleep → wake finish then fly
   useEffect(() => {
-    let timer: number | null = null;
+    scheduleInactivityTimer();
 
-    const schedule = () => {
-      if (timer) clearTimeout(timer);
-      const wait = firstRunDone.current ? LATER_INACTIVITY_MS : FIRST_INACTIVITY_MS;
-      timer = window.setTimeout(() => {
-        firstRunDone.current ? startSleep() : startNavVisit();
-      }, wait);
-    };
-
-    const reset = () => {
-      if (timer) clearTimeout(timer);
-      if (active && phaseRef.current === "sleep") {
-        startFlyOff();
+    const onUserActivity = () => {
+      // If user interacts during any sleeping phase → start wake finish
+      if (active && (phaseRef.current === "sleepWalkIn" ||
+                   phaseRef.current === "sleepSettle" ||
+                   phaseRef.current === "sleepLoop")) {
+        startSleepWakeFinish();
         return;
       }
-      schedule();
+      // If already in wake finish, ignore (it’ll transition to fly)
+      if (!active) scheduleInactivityTimer();
     };
 
     ["mousemove", "keydown", "wheel", "scroll", "touchstart"].forEach((ev) =>
-      addEventListener(ev, reset, { passive: true })
+      addEventListener(ev, onUserActivity, { passive: true })
     );
-    schedule();
 
     return () => {
       ["mousemove", "keydown", "wheel", "scroll", "touchstart"].forEach((ev) =>
-        removeEventListener(ev, reset)
+        removeEventListener(ev, onUserActivity)
       );
-      if (timer) clearTimeout(timer);
+      clearInactivityTimer();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
-  // Helpers
+  // utils
   function setSheetOnce() {
     if (!duckRef.current) return;
     duckRef.current.style.backgroundImage = `url(${spriteUrl})`;
@@ -156,42 +218,42 @@ export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl
     duckRef.current.style.backgroundRepeat = "no-repeat";
   }
   function baseStart(from: Vec) {
-    bubbleIdx.current = 0;
     posRef.current = from;
     setActive(true);
     setOverlayActive(false);
     frameRef.current = 0;
     lastFrameTime.current = 0;
     idleLoopCount.current = 0;
-    setQuack(false);
-    if (quackTimer.current) {
-      clearTimeout(quackTimer.current);
-      quackTimer.current = null;
-    }
+    bubbleIdx.current = 0;
+    setBubbleOn(false);
+    seqIndexRef.current = 0;
+    sleepRowRef.current = null;
+    clearInactivityTimer();
     setSheetOnce();
     if (!rafRef.current) rafRef.current = requestAnimationFrame(tick);
   }
   function stopDuck() {
     setActive(false);
     setOverlayActive(false);
-    setQuack(false);
+    setBubbleOn(false);
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     rafRef.current = null;
     phaseRef.current = null;
     targetRef.current = null;
+    // unhide real cursor; remove fake cursor
+    document.body.classList.remove("cursor-none");
+    dragging.current = false;
+    clearInactivityTimer();
   }
   function stepTowards(p: Vec, t: Vec, d: number): Vec {
-    const dx = t.x - p.x,
-      dy = t.y - p.y;
+    const dx = t.x - p.x, dy = t.y - p.y;
     const dist = Math.hypot(dx, dy);
     if (dist <= d) return { ...t };
     return { x: p.x + (dx / dist) * d, y: p.y + (dy / dist) * d };
   }
 
-  // === Scenarios ===
-
-  // FIRST inactivity: walk from a corner to navbar, park beside _projects_
-  function startNavVisit() {
+  // === FIRST AFK: corner → mouse → projects → sit ===
+  function startEscort() {
     const corners: Vec[] = [
       { x: -40, y: -40 },
       { x: innerWidth + 40, y: -40 },
@@ -201,117 +263,221 @@ export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl
     const start = corners[(Math.random() * corners.length) | 0];
     baseStart(start);
 
-    // find projects link position
-    const projLink = document.querySelector('a[href="#projects"]') as HTMLElement | null;
-    let target: Vec = { x: innerWidth / 2 + STAND_GAP_X, y: 20 + STAND_Y }; // fallback
-    if (projLink) {
-      const r = projLink.getBoundingClientRect();
-      target = { x: r.right + STAND_GAP_X, y: r.top + STAND_Y };
-    }
+    phaseRef.current = "toMouse";
+    targetRef.current = { ...lastMouse.current };
+    rowRef.current = targetRef.current.x! >= start.x ? ROW_WALK_R : ROW_WALK_L;
+  }
 
-    phaseRef.current = "toNav";
+  // === SECOND AFK: sleep sequence ===
+
+  // 1) Walk in from a corner to central spot
+  function startSleepWalkIn() {
+    const corners: Vec[] = [
+      { x: -40, y: -40 },
+      { x: innerWidth + 40, y: -40 },
+      { x: -40, y: innerHeight + 40 },
+      { x: innerWidth + 40, y: innerHeight + 40 },
+    ];
+    const start = corners[(Math.random() * corners.length) | 0];
+    const target = pickCentralSpot();
+
+    baseStart(start);
+    phaseRef.current = "sleepWalkIn";
     targetRef.current = target;
     rowRef.current = target.x >= start.x ? ROW_WALK_R : ROW_WALK_L;
   }
 
-  // LATER inactivity: sleep in a corner
-  function startSleep() {
-    const pad = 28;
-    const corners: Vec[] = [
-      { x: pad, y: pad },
-      { x: innerWidth - pad, y: pad },
-      { x: pad, y: innerHeight - pad },
-      { x: innerWidth - pad, y: innerHeight - pad },
-    ];
-    const start = corners[(Math.random() * corners.length) | 0];
-    baseStart(start);
+  // 2) Settle sequence at the spot (choose row 14 or 15 depending on approach direction)
+  function beginSleepSettle() {
+    phaseRef.current = "sleepSettle";
+    seqIndexRef.current = 0;
 
-    phaseRef.current = "sleep";
-    targetRef.current = null;
-    rowRef.current = Math.random() < 0.5 ? ROW_SLEEP_A : ROW_SLEEP_B;
+    // If the last segment was moving right → prefer right-facing (row 15), else row 14.
+    const movingRight = (targetRef.current?.x ?? posRef.current.x) >= posRef.current.x;
+    if (movingRight) {
+      sleepRowRef.current = 15;
+      rowRef.current = ROW_SLEEP_15;
+      frameRef.current = S15_SETTLE_REV[0]; // 14 → 11
+    } else {
+      sleepRowRef.current = 14;
+      rowRef.current = ROW_SLEEP_14;
+      frameRef.current = S14_SETTLE_FWD[0]; // 0 → 5
+    }
   }
 
-  // On user activity while sleeping
-  function startFlyOff() {
+  // 3) On user activity during/after sleep → finish & then fly
+  function startSleepWakeFinish() {
     if (!active) return;
+
+    // If still walking in, just begin fly immediately (skip settle)
+    if (phaseRef.current === "sleepWalkIn") {
+      beginFly();
+      return;
+    }
+    // If settling or looping, run the correct finish sequence
+    phaseRef.current = "sleepWakeFin";
+    seqIndexRef.current = 0;
+
+    if (sleepRowRef.current === 14) {
+      rowRef.current = ROW_SLEEP_14;
+      frameRef.current = S14_WAKE_FWD[0]; // 11→14
+    } else if (sleepRowRef.current === 15) {
+      rowRef.current = ROW_SLEEP_15;
+      frameRef.current = S15_WAKE_REV[0]; // 5→0
+    } else {
+      // fallback: no sleep row chosen; just fly
+      beginFly();
+    }
+  }
+
+  // 4) Begin fly off-screen (left/right only), using correct row and 4↔5 loop
+  function beginFly() {
     phaseRef.current = "flyOff";
-    const towardRight = Math.random() < 0.5;
-    rowRef.current = towardRight ? ROW_FLY_B : ROW_FLY_A;
-    targetRef.current = towardRight ? { x: innerWidth + 160, y: -80 } : { x: -160, y: -80 };
+    const exit = pickLateralExit(posRef.current);
+    const goingRight = exit.x > posRef.current.x;
+
+    // Facing mapping (you said it was reversed earlier; this is the corrected version):
+    // goingRight → use ROW_FLY_12, goingLeft → use ROW_FLY_13
+    rowRef.current = goingRight ? ROW_FLY_12 : ROW_FLY_13;
+
+    targetRef.current = exit;
+    seqIndexRef.current = 0;
+    frameRef.current = goingRight ? FLY12_LOOP[0] : FLY13_LOOP[0];
+
     if (!rafRef.current) rafRef.current = requestAnimationFrame(tick);
   }
 
-  // === Animation loop ===
+  // animation
   function tick(now: number) {
     if (!playingRef.current) {
       rafRef.current = requestAnimationFrame(tick);
       return;
     }
 
-    // choose frame count per phase
-    const cols =
-      phaseRef.current === "sleep"
-        ? SLEEP_COLS
-        : phaseRef.current === "flyOff"
-        ? FLY_COLS
-        : phaseRef.current === "sitInit"
-        ? SIT_COLS
-        : phaseRef.current === "sitLoop"
-        ? IDLE_COLS
-        : phaseRef.current === "getUp"
-        ? GETUP_COLS
-        : WALK_COLS;
+    // choose frame delay (keep idle slower)
+    const delay = phaseRef.current === "sitLoop" ? IDLE_FRAME_RATE_MS : FRAME_RATE_MS;
 
-// how many frames to wait before advancing (per phase)
-const delay =
-  phaseRef.current === "sitLoop" ? IDLE_FRAME_RATE_MS : FRAME_RATE_MS;
+    if (now - lastFrameTime.current >= delay) {
+      // advance frames by phase
+      if (phaseRef.current === "sleepSettle") {
+        if (sleepRowRef.current === 14) {
+          // 0→5 once
+          seqIndexRef.current += 1;
+          if (seqIndexRef.current >= S14_SETTLE_FWD.length) {
+            // into loop
+            phaseRef.current = "sleepLoop";
+            seqIndexRef.current = 0;
+            frameRef.current = S14_LOOP_FWD[0];
+          } else {
+            frameRef.current = S14_SETTLE_FWD[seqIndexRef.current];
+          }
+        } else if (sleepRowRef.current === 15) {
+          // 14→11 once
+          seqIndexRef.current += 1;
+          if (seqIndexRef.current >= S15_SETTLE_REV.length) {
+            // into loop
+            phaseRef.current = "sleepLoop";
+            seqIndexRef.current = 0;
+            frameRef.current = S15_LOOP_REV[0];
+          } else {
+            frameRef.current = S15_SETTLE_REV[seqIndexRef.current];
+          }
+        }
+      } else if (phaseRef.current === "sleepLoop") {
+        if (sleepRowRef.current === 14) {
+          seqIndexRef.current = nextLoopIndex(S14_LOOP_FWD, seqIndexRef.current);
+          frameRef.current = S14_LOOP_FWD[seqIndexRef.current];
+        } else if (sleepRowRef.current === 15) {
+          seqIndexRef.current = nextLoopIndex(S15_LOOP_REV, seqIndexRef.current);
+          frameRef.current = S15_LOOP_REV[seqIndexRef.current];
+        }
+      } else if (phaseRef.current === "sleepWakeFin") {
+        if (sleepRowRef.current === 14) {
+          seqIndexRef.current += 1;
+          if (seqIndexRef.current >= S14_WAKE_FWD.length) {
+            beginFly();
+          } else {
+            frameRef.current = S14_WAKE_FWD[seqIndexRef.current];
+          }
+        } else if (sleepRowRef.current === 15) {
+          seqIndexRef.current += 1;
+          if (seqIndexRef.current >= S15_WAKE_REV.length) {
+            beginFly();
+          } else {
+            frameRef.current = S15_WAKE_REV[seqIndexRef.current];
+          }
+        }
+      } else if (phaseRef.current === "flyOff") {
+        // flap 4↔5 forever until off-screen
+        if (rowRef.current === ROW_FLY_12) {
+          seqIndexRef.current = nextLoopIndex(FLY12_LOOP, seqIndexRef.current);
+          frameRef.current = FLY12_LOOP[seqIndexRef.current];
+        } else {
+          seqIndexRef.current = nextLoopIndex(FLY13_LOOP, seqIndexRef.current);
+          frameRef.current = FLY13_LOOP[seqIndexRef.current];
+        }
+      } else {
+        // default stepping for sit/getup/walk/etc.
+        const cols =
+          phaseRef.current === "sitInit"
+            ? SIT_COLS
+            : phaseRef.current === "sitLoop"
+            ? IDLE_COLS
+            : phaseRef.current === "getUp"
+            ? GETUP_COLS
+            : WALK_COLS;
+        frameRef.current = (frameRef.current + 1) % cols;
 
-if (now - lastFrameTime.current >= delay) {
-  const prev = frameRef.current;
-  frameRef.current = (frameRef.current + 1) % cols;
-  lastFrameTime.current = now;
-
-  if (phaseRef.current === "sitLoop" && frameRef.current === 0 && prev === cols - 1) {
-    idleLoopCount.current += 1;
-    if (idleLoopCount.current % QUACK_EVERY_LOOPS === 0) {
-      setQuack(true);
-      if (quackTimer.current) clearTimeout(quackTimer.current);
-      quackTimer.current = window.setTimeout(() => setQuack(false), 1200);
-      bubbleIdx.current = (bubbleIdx.current + 1) % BUBBLE_SEQUENCE.length;
-    }
-  }
-}
-
-
-    // PHASES WITHOUT MOVEMENT
-    if (phaseRef.current === "sleep" || phaseRef.current === "sitInit" || phaseRef.current === "sitLoop" || phaseRef.current === "getUp") {
-      // set proper row for these phases
-      if (phaseRef.current === "sleep") {
-        // keep chosen sleep row
-      } else if (phaseRef.current === "sitInit") {
-        rowRef.current = ROW_SIT_ONCE;
-      } else if (phaseRef.current === "sitLoop") {
-        rowRef.current = ROW_IDLE_LOOP;
-      } else if (phaseRef.current === "getUp") {
-        rowRef.current = ROW_GETUP;
+        // idle loop bubble cadence
+        if (phaseRef.current === "sitLoop" && frameRef.current === 0) {
+          idleLoopCount.current += 1;
+          if (idleLoopCount.current % QUACK_EVERY_LOOPS === 0) {
+            setBubbleOn(true);
+            if (bubbleTimer.current) clearTimeout(bubbleTimer.current);
+            bubbleTimer.current = window.setTimeout(() => setBubbleOn(false), 1200);
+            bubbleIdx.current = (bubbleIdx.current + 1) % BUBBLE_SEQUENCE.length;
+          }
+        }
       }
 
+      lastFrameTime.current = now;
+    }
+
+    // non-moving phases (sit*, getUp, sleep*, i.e., all custom sleep except the walk-in)
+    if (
+      phaseRef.current === "sitInit" ||
+      phaseRef.current === "sitLoop" ||
+      phaseRef.current === "getUp" ||
+      phaseRef.current === "sleepSettle" ||
+      phaseRef.current === "sleepLoop" ||
+      phaseRef.current === "sleepWakeFin"
+    ) {
+      // select row for standard phases
+      if (phaseRef.current === "sitInit") rowRef.current = ROW_SIT_ONCE;
+      else if (phaseRef.current === "sitLoop") rowRef.current = ROW_IDLE_LOOP;
+      else if (phaseRef.current === "getUp") rowRef.current = ROW_GETUP;
+      // sleep* rows are already set
+
+      // draw sprite
       if (duckRef.current) {
-        const frameX = -FRAME_W * frameRef.current;
-        const frameY = -FRAME_H * rowRef.current;
-        duckRef.current.style.backgroundPosition = `${frameX}px ${frameY}px`;
+        duckRef.current.style.backgroundPosition = `${-FRAME_W * frameRef.current}px ${-FRAME_H * rowRef.current}px`;
         duckRef.current.style.transform = `translate(${posRef.current.x}px, ${posRef.current.y}px) scale(3.5)`;
       }
-
-      // handle transitions for the non-moving sequences
-      if (phaseRef.current === "sitInit" && frameRef.current === SIT_COLS - 1) {
-        // when sit-once finishes, enter idle loop + enable click overlay
-        phaseRef.current = "sitLoop";
-        setOverlayActive(true);
+      // keep fake cursor parked if visible
+      if (fakeRef.current) {
+        fakeRef.current.style.transform = `translate(${fakePosRef.current.x}px, ${fakePosRef.current.y}px)`;
+        fakeRef.current.style.opacity = fakeVisibleRef.current ? "1" : "0";
       }
 
+      // sit transitions unchanged
+      if (phaseRef.current === "sitInit" && frameRef.current === SIT_COLS - 1) {
+        phaseRef.current = "sitLoop";
+        setOverlayActive(true); // screen becomes a button
+        firstRunDone.current = true;
+        clearInactivityTimer(); // freeze while sitting
+      }
       if (phaseRef.current === "getUp" && frameRef.current === GETUP_COLS - 1) {
-        // finished getting up → start walking away off-screen
+        // after get-up, walk away off-screen
         phaseRef.current = "walkAway";
         const goRight = Math.random() < 0.5;
         rowRef.current = goRight ? ROW_WALK_R : ROW_WALK_L;
@@ -322,29 +488,73 @@ if (now - lastFrameTime.current >= delay) {
       return;
     }
 
-    // PHASES WITH MOVEMENT (toNav, walkAway, flyOff)
+    // moving phases: toMouse, toNav, walkAway, sleepWalkIn, flyOff (flyOff position also updated here)
     const target = targetRef.current;
     if (target) {
-      if (phaseRef.current === "toNav" || phaseRef.current === "walkAway") {
+      if (["toMouse", "toNav", "walkAway", "sleepWalkIn"].includes(String(phaseRef.current))) {
         rowRef.current = target.x >= posRef.current.x ? ROW_WALK_R : ROW_WALK_L;
       }
+
       const next = stepTowards(posRef.current, target, SPEED);
       posRef.current = next;
 
+      // draw goose
       if (duckRef.current) {
-        const frameX = -FRAME_W * frameRef.current;
-        const frameY = -FRAME_H * rowRef.current;
-        duckRef.current.style.backgroundPosition = `${frameX}px ${frameY}px`;
+        duckRef.current.style.backgroundPosition = `${-FRAME_W * frameRef.current}px ${-FRAME_H * rowRef.current}px`;
         duckRef.current.style.transform = `translate(${next.x}px, ${next.y}px) scale(3.5)`;
       }
 
-      // Arrived?
+      // move fake cursor if dragging
+      if (dragging.current && fakeRef.current) {
+        fakePosRef.current = next;
+        fakeRef.current.style.transform = `translate(${fakePosRef.current.x}px, ${fakePosRef.current.y}px)`;
+        fakeRef.current.style.opacity = fakeVisibleRef.current ? "1" : "0";
+      }
+
+      // arrival handling
       if (Math.hypot(target.x - next.x, target.y - next.y) <= SNAP) {
-        if (phaseRef.current === "toNav") {
-          // park: play row 10 once, then idle loop row 9
+        if (phaseRef.current === "toMouse") {
+          // grab cursor, hide real one
+          dragging.current = true;
+          fakeVisibleRef.current = true;
+          document.body.classList.add("cursor-none");
+
+          // compute nav standing spot (to the right of _projects)
+          const projLink = document.querySelector('a[href="#projects"]') as HTMLElement | null;
+          let navSpot: Vec = { x: innerWidth / 2 + STAND_GAP_X, y: 20 + STAND_Y };
+          if (projLink) {
+            const r = projLink.getBoundingClientRect();
+            navSpot = { x: r.right + STAND_GAP_X, y: r.top + STAND_Y };
+          }
+
+          phaseRef.current = "toNav";
+          targetRef.current = navSpot;
+        } else if (phaseRef.current === "toNav") {
+          // drop the fake cursor at the projects tab and KEEP it visible
+          dragging.current = false;
+
+          const projLink = document.querySelector('a[href="#projects"]') as HTMLElement | null;
+          if (projLink) {
+            const r = projLink.getBoundingClientRect();
+            fakePosRef.current = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+          } else {
+            fakePosRef.current = { x: window.innerWidth / 2, y: 32 };
+          }
+          fakeVisibleRef.current = true;
+          if (fakeRef.current) {
+            fakeRef.current.style.transform = `translate(${fakePosRef.current.x}px, ${fakePosRef.current.y}px)`;
+            fakeRef.current.style.opacity = "1";
+          }
+
+          // sit down (row 10 once → row 9 loop)
           phaseRef.current = "sitInit";
           frameRef.current = 0;
-        } else if (phaseRef.current === "walkAway" || phaseRef.current === "flyOff") {
+        } else if (phaseRef.current === "walkAway") {
+          stopDuck();
+        } else if (phaseRef.current === "sleepWalkIn") {
+          // reached central spot → settle
+          beginSleepSettle();
+        } else if (phaseRef.current === "flyOff") {
           stopDuck();
         }
       }
@@ -353,27 +563,35 @@ if (now - lastFrameTime.current >= delay) {
     rafRef.current = requestAnimationFrame(tick);
   }
 
-  // CLICK ANYWHERE WHILE IDLING → scroll to projects, then get up + walk away
+  // screen click while idling → scroll to projects, then get up + walk away
   const handleOverlayClick = () => {
     setOverlayActive(false);
     scrollToSection("#projects", 56);
-    if (!firstRunDone.current) firstRunDone.current = true;
-    // play get-up animation (row 1), then walk away (rows 6/7)
+
+    // swap cursors now
+    fakeVisibleRef.current = false;
+    if (fakeRef.current) fakeRef.current.style.opacity = "0";
+    document.body.classList.remove("cursor-none");
+
     if (phaseRef.current === "sitInit" || phaseRef.current === "sitLoop") {
       phaseRef.current = "getUp";
       frameRef.current = 0;
     }
+
+    // resume inactivity tracking for later AFK (sleep)
+    scheduleInactivityTimer();
   };
 
-  // RENDER
   if (!active) return null;
 
-  // quack bubble position relative to duck
+  // bubble position near duck
   const bubbleStyle: React.CSSProperties = {
     position: "fixed",
     left: posRef.current.x + 28,
     top: posRef.current.y - 24,
   };
+  const bubbleText =
+    BUBBLE_SEQUENCE[(bubbleIdx.current + BUBBLE_SEQUENCE.length - 1) % BUBBLE_SEQUENCE.length];
 
   return (
     <>
@@ -385,14 +603,42 @@ if (now - lastFrameTime.current >= delay) {
         />
       )}
 
-      {quack && (
+      {bubbleOn && (
         <div
           className="z-[61] select-none pointer-events-none px-2 py-1 rounded-lg border border-white/10 bg-slate-900/80 text-emerald-300 font-mono text-xs shadow"
           style={bubbleStyle}
         >
-          {BUBBLE_SEQUENCE[(bubbleIdx.current + BUBBLE_SEQUENCE.length - 1) % BUBBLE_SEQUENCE.length]}
+          {bubbleText}
         </div>
       )}
+
+      {/* Fake cursor */}
+      <div
+        ref={fakeRef}
+        aria-hidden
+        style={{
+          position: "fixed",
+          left: 0,
+          top: 0,
+          width: "22px",
+          height: "22px",
+          transform: `translate(${fakePosRef.current.x}px, ${fakePosRef.current.y}px)`,
+          transition: "opacity 180ms ease",
+          opacity: fakeVisibleRef.current ? 1 : 0,
+          zIndex: 62,
+          pointerEvents: "none",
+          backgroundImage:
+            `url("data:image/svg+xml;utf8,` +
+            encodeURIComponent(`
+              <svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24'>
+                <path d='M3 2l15 9-6 2 4 7-3 2-4-7-6 2z' fill='%23e5e7eb' stroke='white' stroke-width='1' />
+              </svg>
+            `) +
+            `")`,
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "contain",
+        }}
+      />
 
       <div ref={layerRef} className="duck-layer">
         <div

@@ -58,6 +58,7 @@ html { font-family: var(--font-sans); }
 /* subtle grid bg + vignette for flavor */
 body::before{
   content:"";
+  
   position:fixed; inset:0; pointer-events:none; z-index:-1;
   background:
     radial-gradient(1000px 600px at 75% 25%, rgba(16,185,129,.08), transparent 60%),
@@ -150,7 +151,7 @@ body::after{
 
 .top-hint {
   position: fixed;
-  top: 16px;
+  top: 46px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 40;
@@ -258,6 +259,7 @@ body::after{
   image-rendering: pixelated;
   will-change: transform, background-position;
   transform: translate(-50%, -50%) scale(3.5); /* size on screen */
+  background-repeat: no-repeat;
 }
 .fake-cursor {
   position: absolute;
