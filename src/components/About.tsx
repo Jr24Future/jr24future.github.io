@@ -80,14 +80,14 @@ export default function About() {
 
                   <div>find me in:</div>
                   <div className="mt-2 flex gap-2 text-slate-100">
-                    <a className="icon-btn" href={site.github} target="_blank" rel="noreferrer noopener" aria-label="GitHub">
+                    <a className="icon-btn hover:text-green-500" href={site.github} target="_blank" rel="noreferrer noopener" aria-label="GitHub">
                       <Github className="w-5 h-5" />
                     </a>
-                    <a className="icon-btn" href={site.linkedin} target="_blank" rel="noreferrer noopener" aria-label="LinkedIn">
+                    <a className="icon-btn hover:text-blue-500" href={site.linkedin} target="_blank" rel="noreferrer noopener" aria-label="LinkedIn">
                       <Linkedin className="w-5 h-5" />
                     </a>
                     {site.instagram && (
-                      <a className="icon-btn" href={site.instagram} target="_blank" rel="noreferrer noopener" aria-label="Instagram">
+                      <a className="icon-btn hover:text-pink-500" href={site.instagram} target="_blank" rel="noreferrer noopener" aria-label="Instagram">
                         <Instagram className="w-5 h-5" />
                       </a>
                     )}
