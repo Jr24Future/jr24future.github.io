@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { about, site, resumeShort } from "../data";
+import { Github, Linkedin, Instagram, Link as LinkIcon, GraduationCap, BookOpen, Code2, Shield } from "lucide-react";
+import { interestsNow, schools, resumeSkillsShort, resumeProjectLinks } from "../data";
 
 type TabKey = "bio" | "interests" | "education" | "resume";
 
@@ -20,21 +22,14 @@ export default function About() {
       return ["/** education */", ...about.education.map(e => `- ${e.school} — ${e.degree} (${e.when})`)];
     // resume (short)
     const lines: string[] = [];
-    lines.push("/** resume (short) */");
-    lines.push("");
-    lines.push("// summary");
+    lines.push("/** resume (short) */", "", "// summary");
     resumeShort.summary.forEach(s => lines.push(s));
-    lines.push("");
-    lines.push("// experience");
+    lines.push("", "// experience");
     resumeShort.experience.forEach(x => {
       lines.push(`- ${x.role} @ ${x.org} (${x.when})`);
       x.points.forEach(p => lines.push(`  • ${p}`));
     });
-    lines.push("");
-    lines.push("// skills");
-    lines.push(resumeShort.skills.join(", "));
-    lines.push("");
-    lines.push('// see full → /resume');
+    lines.push("", "// skills", resumeShort.skills.join(", "), "", '// see full → /resume');
     return lines;
   }, [tab]);
 
@@ -69,41 +64,112 @@ export default function About() {
               ))}
             </div>
 
-
-
-            {/* quick facts (auto-updates with tab) */}
-            <div className="mt-4 text-xs leading-6">
+            {/* contextual content */}
+            <div className="mt-4 text-xs leading-6 space-y-4">
+              {/* BIO → keep social links */}
               {tab === "bio" && (
-                <div className="space-y-1">
-                  <div><span className="text-slate-400">// name:</span> {site.name}</div>
-                  <div><span className="text-slate-400">// role:</span> {site.role}</div>
-                  <div><span className="text-slate-400">// email:</span> {site.email}</div>
-                  <div><span className="text-slate-400">// location:</span> {site.location}</div>                  
-                </div>
+                <>
+                  <div className="space-y-1">
+                    <div><span className="text-slate-400">// name:</span> {site.name}</div>
+                    <div><span className="text-slate-400">// role:</span> {site.role}</div>
+                    <div><span className="text-slate-400">// email:</span> {site.email}</div>
+                    <div><span className="text-slate-400">// location:</span> {site.location}</div>
+                  </div>
+
+                  <hr className="border-white/10 my-2" />
+
+                  <div>find me in:</div>
+                  <div className="mt-2 flex gap-2 text-slate-100">
+                    <a className="icon-btn" href={site.github} target="_blank" rel="noreferrer noopener" aria-label="GitHub">
+                      <Github className="w-5 h-5" />
+                    </a>
+                    <a className="icon-btn" href={site.linkedin} target="_blank" rel="noreferrer noopener" aria-label="LinkedIn">
+                      <Linkedin className="w-5 h-5" />
+                    </a>
+                    {site.instagram && (
+                      <a className="icon-btn" href={site.instagram} target="_blank" rel="noreferrer noopener" aria-label="Instagram">
+                        <Instagram className="w-5 h-5" />
+                      </a>
+                    )}
+                  </div>
+                </>
               )}
+
+              {/* INTERESTS → icons + links */}
               {tab === "interests" && (
-                <div className="space-y-1">
+                <>
                   <div className="text-slate-400">// currently into:</div>
-                  <div>TypeScript • React • Canvas • Security</div>
-                </div>
+                  <div className="mt-2 grid grid-cols-1 gap-2">
+                    {interestsNow.map((it) => (
+                      <a
+                        key={it.label}
+                        href={it.href}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-white/10 hover:bg-white/10"
+                      >
+                        {it.label.includes("TypeScript") && <Code2 className="w-4 h-4 text-sky-300" />}
+                        {it.label.includes("React") && <Code2 className="w-4 h-4 text-cyan-300" />}
+                        {it.label.includes("Canvas") && <BookOpen className="w-4 h-4 text-emerald-300" />}
+                        {it.label.includes("Security") && <Shield className="w-4 h-4 text-emerald-300" />}
+                        <span>{it.label}</span>
+                        <LinkIcon className="ml-auto w-3.5 h-3.5 opacity-60" />
+                      </a>
+                    ))}
+                  </div>
+                </>
               )}
+
+              {/* EDUCATION → school icons + links + notes */}
               {tab === "education" && (
-                <div className="space-y-1">
-                  <div className="text-slate-400">// school:</div>
-                  <div>Iowa State University</div>
+                <div className="space-y-3">
+                  {schools.map((s) => (
+                    <a
+                      key={s.name}
+                      href={s.url}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="block rounded-lg border border-white/10 hover:bg-white/10 px-2 py-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <GraduationCap className="w-4 h-4 text-emerald-300" />
+                        <span>{s.name}</span>
+                      </div>
+                      {s.note && <div className="pl-6 text-slate-400">{s.note}</div>}
+                    </a>
+                  ))}
                 </div>
               )}
-            </div>
 
+              {/* RESUME → skills chips + links to projects section */}
+              {tab === "resume" && (
+                <>
+                  <div className="text-slate-400">// skills</div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {resumeSkillsShort.map((sk) => (
+                      <span key={sk} className="px-2 py-1 rounded-lg border border-white/10 bg-white/5">{sk}</span>
+                    ))}
+                  </div>
 
-            {/* social */}
-            <div className="mt-5 border-t border-white/10 pt-3 text-xs">
-              find me in:
-              <div className="mt-2 flex gap-2">
-                <a className="icon-btn" href={site.github} target="_blank" rel="noreferrer" aria-label="GitHub">GH</a>
-                <a className="icon-btn" href={site.linkedin} target="_blank" rel="noreferrer" aria-label="LinkedIn">in</a>
-                <a className="icon-btn" href={site.instagram} target="_blank" rel="noreferrer" aria-label="Instagram">IG</a>
-              </div>
+                  <div className="text-slate-400 mt-4">// projects</div>
+                  <div className="mt-2 grid grid-cols-1 gap-2">
+                    {resumeProjectLinks.map((p) => (
+                      <a
+                        key={p.label}
+                        href={p.href}
+                        className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-white/10 hover:bg-white/10"
+                      >
+                        <Code2 className="w-4 h-4 text-emerald-300" />
+                        <span>{p.label}</span>
+                      </a>
+                    ))}
+                  </div>
+
+                  <div className="pt-3">
+                    <a href="/resume" className="btn-primary">see full version of resume</a>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </aside>
@@ -130,12 +196,7 @@ export default function About() {
               <pre className="editor-code font-mono text-slate-200/90 text-[15px] leading-7 whitespace-pre-wrap">
                 {editorLines.join("\n")}
               </pre>
-
-              {tab === "resume" && (
-                <div className="mt-4">
-                  <a href="/resume" className="btn-primary">see full version of resume</a>
-                </div>
-              )}
+              {/* If you prefer the CTA here instead, move it from the left card */}
             </div>
           </div>
         </section>
@@ -145,24 +206,20 @@ export default function About() {
           <p className="font-mono text-slate-300/90">// Code snippet:</p>
           <div className="mt-3 p-4 rounded-xl border border-white/10 bg-slate-900/40">
             <pre className="font-mono text-[13px] leading-6 overflow-x-auto">
-              <code>
-                <span className="token-key">type</span> Role{" "}
-                <span className="token-key">=</span> <span className="token-str">"Support"</span>{" "}
-                <span className="token-key">|</span> <span className="token-str">"Engineer"</span>;
-                {"\n"}
-                <span className="token-key">interface</span> Experience {"{"}{"\n"}
-                &nbsp;&nbsp;role: Role;{"\n"}
-                &nbsp;&nbsp;org: <span className="token-type">string</span>;{"\n"}
-                &nbsp;&nbsp;start: <span className="token-type">string</span>;{"\n"}
-                &nbsp;&nbsp;end?: <span className="token-type">string</span>;{"\n"}
-                {"}"}{"\n\n"}
-                <span className="token-key">const</span> current: Experience {"="} {"{"}{"\n"}
-                &nbsp;&nbsp;role: <span className="token-str">"Engineer"</span>,{"\n"}
-                &nbsp;&nbsp;org: <span className="token-str">"Iowa State University"</span>,{"\n"}
-                &nbsp;&nbsp;start: <span className="token-str">"Oct 2023"</span>,{"\n"}
-                &nbsp;&nbsp;end: <span className="token-str">"Present"</span>{"\n"}
-                {"}"};{"\n"}
-              </code>
+{`type Role = "Support" | "Engineer";
+interface Experience {
+  role: Role;
+  org: string;
+  start: string;
+  end?: string;
+}
+
+const current: Experience = {
+  role: "Engineer",
+  org: "Iowa State University",
+  start: "Oct 2023",
+  end: "Present",
+};`}
             </pre>
           </div>
         </aside>

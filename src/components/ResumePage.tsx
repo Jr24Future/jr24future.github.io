@@ -1,4 +1,6 @@
 import { site } from "../data";
+import { Github, Linkedin, Instagram } from "lucide-react";
+
 
 /** --- Data pulled/condensed from your resume --- */
 type Bullet = string;
@@ -194,10 +196,10 @@ export default function ResumePage() {
             <div className="pt-3 border-t border-white/10">
               <div className="text-slate-400 font-mono">// links</div>
               <div className="mt-2 flex flex-col gap-1">
-                <a className="underline underline-offset-4 hover:text-emerald-300" target="_blank" href="https://github.com/Jr24Future">github.com/Jr24Future</a>
-                <a className="underline underline-offset-4 hover:text-emerald-300" target="_blank" href="https://www.linkedin.com/in/rr-ll-software">linkedin.com/in/rr-ll-software</a>
-                <a className="underline underline-offset-4 hover:text-emerald-300" target="_blank" href={site.instagram}>instagram.com/jr_frames_</a>
-              </div>
+              <a href={site.github} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-green-500 transition"> github <Github className="w-5 h-5" /></a>
+              <a href={site.linkedin} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-blue-500 transition"> linkedin <Linkedin className="w-5 h-5" /></a>
+              <a href={site.instagram} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-pink-500 transition"> instagram <Instagram className="w-5 h-5" /></a>
+            </div>
             </div>
 
             <div className="pt-3 border-t border-white/10">

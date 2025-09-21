@@ -23,6 +23,7 @@ const tech: Tech[] = [
   { name: "Angular",    src: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/angular/angular-original.svg" },
   { name: "BootStrap",  src: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/bootstrap/bootstrap-original.svg" },
   { name: "json",       src: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/json/json-original.svg" },
+  { name: "jamf",       src: "/JAMF.svg" }
 ];
 
 // Floating tooltip rendered into <body> so no clipping

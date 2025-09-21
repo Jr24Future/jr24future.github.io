@@ -4,12 +4,43 @@ export const site = {
   role: "Software Engineer",
   location: "Ames, IA",
   blurb:
-    "Sit back, relax, and enjoy a cup of coffee. Play classic arcade games, or explore what I’ve been building — otherwise hang out with the Goose.",
+    "Sit back, relax, and enjoy a cup of coffee. Play classic arcade games, or explore what I’ve been building, otherwise hang out with the Goose.",
   github: "https://github.com/Jr24Future",
   linkedin: "https://www.linkedin.com/in/your-handle",
   email: "errollbarker1234@gmail.com",
   instagram: "https://www.instagram.com/jr_frames_/", 
 };
+
+export const interestsNow = [
+  { label: "TypeScript", href: "https://www.typescriptlang.org/" },
+  { label: "React",      href: "https://react.dev/" },
+  { label: "Canvas API", href: "https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API" },
+  { label: "Security",   href: "https://owasp.org/" },
+];
+
+export const schools = [
+  {
+    name: "Iowa State University",
+    url: "https://www.iastate.edu/",
+    note: "B.S. Software Engineering (Minor: Cybersecurity)",
+  },
+  {
+    name: "Sigourney Jr-Sr High School",
+    url: "https://www.sigourneyschools.com/",
+    note: "High School Diploma",
+  },
+];
+
+export const resumeSkillsShort = [
+  "TypeScript", "React", "Node", "Tailwind",
+  "Java", "C", "SQL", "Security",
+];
+
+export const resumeProjectLinks = [
+  { label: "Snake Collector", href: "#projects" },
+  { label: "URL Shortener",   href: "#projects" },
+  { label: "Portfolio",       href: "#projects" },
+];
 
 export const about = {
   bio: [
