@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-/* --- reveal on scroll --- */
 .reveal { 
   opacity: 0; 
   transform: translateY(12px); 
@@ -11,7 +10,6 @@
   transform: none; 
 }
 
-/* --- bouncing scroll hint --- */
 .scroll-hint {
   position: fixed;
   left: 50%;
@@ -31,7 +29,6 @@
   transform: rotate(45deg);
   animation: bounce 1.2s ease-in-out infinite;
 }
-
 .scroll-hint-center {
   position: fixed;
   bottom: 40px;
@@ -41,21 +38,17 @@
   animation: bounce 1.4s ease-in-out infinite;
   pointer-events: none;  
 }
-
 @keyframes bounce {
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(10px); }
 }
 
-/* optional fonts via CSS variables */
 :root {
   --font-sans: "Inter", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, Menlo, Monaco;
 }
 html { font-family: var(--font-sans); }
 .font-mono { font-family: var(--font-mono); }
-
-/* subtle grid bg + vignette for flavor */
 body::before{
   content:"";
   
@@ -73,16 +66,14 @@ body::after{
   mask-image: radial-gradient(ellipse at 50% -10%, black 50%, transparent 75%);
 }
 
-/* helper button styles */
 .btn-primary { @apply inline-flex items-center gap-1 px-4 py-2 rounded-lg bg-amber-400 text-slate-900 font-mono font-semibold hover:bg-amber-300 border border-amber-300 shadow; }
 .btn-outline { @apply inline-flex items-center gap-1 px-4 py-2 rounded-lg border border-white/10 hover:bg-white/5; }
 #download-card.hidden { display: none !important; }
 .btn-primary.hidden { display: none !important; }
 
-/* active nav underline */
 .nav-active { position: relative; }
 .nav-active::after { content:""; position:absolute; left:0; right:0; bottom:-10px; height:2px; background: rgb(52 211 153); border-radius:2px; }
-/* game overlay */
+
 .game-overlay {
   position: absolute;
   inset: 0;
@@ -104,7 +95,6 @@ body::after{
   text-align: center;
 }
 
-/* countdown overlay */
 .countdown-overlay{ position:absolute; inset:0; display:grid; place-items:center; border-radius:inherit; pointer-events:none; background: rgba(2,6,23,.35); backdrop-filter: blur(2px); z-index: 26; }
 .countdown-bubble{
   font-family: var(--font-mono, ui-monospace);
@@ -121,29 +111,23 @@ body::after{
 }
 .game-card__inner { padding: 18px; }
 
-/* Auto-sized typewriter */
 .typewriter{
-  --n: 1; /* fallback if JS hasn't set it yet */
+  --n: 1; 
   display: inline-block;
   overflow: hidden;
   white-space: nowrap;
   margin: 0 1ch;
 
-  /* caret */
   border-right: .12em solid #22c55e;
 
-
-  /* animate width to exactly N characters, in N steps */
   width: 0;
   animation:
     typing 2.5s steps(var(--n)) forwards,
     blink-caret .75s step-end infinite;
 }
-
 @keyframes typing {
   to { width: calc(var(--n) * 1ch + 0.25ch); }
 }
-
 @keyframes blink-caret {
   from, to { border-color: transparent; }
   50% { border-color: #22c55e; }
@@ -155,7 +139,7 @@ body::after{
   left: 50%;
   transform: translateX(-50%);
   z-index: 40;
-  background: rgba(15, 23, 42, 0.85); /* slate-900/85 */
+  background: rgba(15, 23, 42, 0.85); 
   padding: 6px 12px;
   border-radius: 8px;
   border: 1px solid rgba(255,255,255,.08);
@@ -167,20 +151,16 @@ body::after{
   to   { opacity: 1; transform: translate(-50%, 0); }
 }
 
-/* Infinite marquee (duplicate items + shift by one set) */
 .ticker {
   display: flex;
-  min-width: max-content;           /* span full content width */
+  min-width: max-content;           
   animation: ticker 20s linear infinite;
 }
 .ticker:hover { animation-play-state: paused; }
-
 @keyframes ticker {
   from { transform: translateX(0); }
-  to   { transform: translateX(-50%); } /* exactly one set’s width */
+  to   { transform: translateX(-50%); } 
 }
-
-/* Icon look & hover/focus micro-interaction */
 .ticker-item {
   display: inline-flex;
   align-items: center;
@@ -204,9 +184,8 @@ body::after{
   filter: none;
 }
 
-/* Hero corner glow blobs */
 .hero-glow {
-  position: relative; /* anchor the pseudo-elements */
+  position: relative; 
 }
 .hero-glow::before,
 .hero-glow::after {
@@ -231,17 +210,14 @@ body::after{
   .hero-glow::before { left: -120px; top: -40px; width: 320px; height: 320px; }
   .hero-glow::after  { left:  40px; bottom: -100px; width: 280px; height: 280px; }
 }
-
-/* Wider page wrapper */
 .wrap {
-  /* 6xl ≈ 72rem; bump to 7xl/8xl and soften side padding on large screens */
   @apply max-w-7xl mx-auto px-4 md:px-6;
 }
-@media (min-width: 1280px) {        /* xl */
-  .wrap { max-width: 80rem; }       /* 1280px → 1280 max width */
+@media (min-width: 1280px) {        
+  .wrap { max-width: 80rem; }       
 }
-@media (min-width: 1536px) {        /* 2xl */
-  .wrap { max-width: 88rem; }       /* 1408px */
+@media (min-width: 1536px) {        
+  .wrap { max-width: 88rem; }   
 }
 
 .duck-layer {
@@ -253,12 +229,12 @@ body::after{
 }
 .duck {
   position: absolute;
-  width: 32px;                 /* one frame */
+  width: 32px;                
   height: 32px;
   background-repeat: no-repeat;
   image-rendering: pixelated;
   will-change: transform, background-position;
-  transform: translate(-50%, -50%) scale(3.5); /* size on screen */
+  transform: translate(-50%, -50%) scale(3.5); 
   background-repeat: no-repeat;
 }
 .fake-cursor {
@@ -271,8 +247,25 @@ body::after{
   clip-path: polygon(0 0, 0 100%, 40% 62%, 100% 88%, 40% 40%, 100% 0);
   filter: drop-shadow(0 1px 1px rgba(0,0,0,.35));
 }
-/* When duck is dragging, hide real cursor globally */
 .cursor-none * { cursor: none !important; }
 
+.editor-lines { counter-reset: line; }
+.editor-lines li { counter-increment: line; }
+.editor-lines li::before { content: counter(line); }
+
+.tab-dot { display:inline-block; width:10px; height:10px; border-radius:9999px;
+  background: radial-gradient(circle at 30% 30%, #9ca3af 20%, #475569 70%, transparent 100%); }
 
 
+@media print {
+  @page { size: Letter; margin: 0.5in; }
+  nav, footer, details { display: none !important; }
+  .wrap { max-width: none !important; padding: 0 !important; }
+}
+
+.toast-fade { opacity: 0; transform: translateY(4px); transition: opacity .25s ease, transform .25s ease; }
+.toast-fade.show { opacity: 1; transform: none; }
+
+.btn-thin {
+  @apply w-full border border-white/20 rounded-lg bg-transparent text-slate-200 hover:bg-white/10 font-mono text-xs py-1.5 transition;
+}

@@ -15,7 +15,6 @@ export default function SnakeGame({ playerName = "player", siteLabel = "your-han
   const downloadRef = useRef<HTMLAnchorElement | null>(null);
 
   useEffect(() => {
-    // ===== bind elements
     const canvas = canvasRef.current!;
     const startBtn = startBtnRef.current!;
     const overlay = overlayRef.current!;
@@ -24,7 +23,7 @@ export default function SnakeGame({ playerName = "player", siteLabel = "your-han
     const continueBtn = continueBtnRef.current!;
     const downloadCard = downloadRef.current!;
 
-    // HMR-safe: ensure overlay hidden on mount
+    // overlay hidden on mount
     overlay.classList.add("hidden");
 
     // ===================== MINI ARCADE (Snake) =====================
@@ -46,7 +45,7 @@ export default function SnakeGame({ playerName = "player", siteLabel = "your-han
       if (isCountingDown) return;
       isCountingDown = true;
 
-      const container = canvas.parentElement!; // the game card inner
+      const container = canvas.parentElement!; 
       container.style.position = "relative";
 
       const overlayDiv = document.createElement("div");
@@ -61,11 +60,10 @@ export default function SnakeGame({ playerName = "player", siteLabel = "your-han
         if (n === 0) {
           overlayDiv.remove();
           isCountingDown = false;
-          done(); // resume the paused game
+          done(); 
           return;
         }
         bubble.textContent = String(n);
-        // small pulse
         bubble.style.transform = "scale(1)";
         bubble.style.opacity = "1";
         setTimeout(() => {
@@ -79,12 +77,14 @@ export default function SnakeGame({ playerName = "player", siteLabel = "your-han
       tick();
     }
 
+    
+
     type GameKind = "snake" | "invaders";
     // ------- Reward system state -------
     let snakeScore = 0;
     let snakeRewardGiven = false;
 
-    // Full-viewport confetti (fixed overlay)
+    // confetti
     function runConfettiBurstViewport(durationMs = 1800) {
       const confettiCanvas = document.createElement("canvas");
       confettiCanvas.style.position = "fixed";
@@ -179,7 +179,7 @@ export default function SnakeGame({ playerName = "player", siteLabel = "your-han
     }
 
     function createSnakeCardPNG(nameForCard: string, score: number): string {
-      // 720x1024 portrait card
+      // portrait card
       const w = 720,
         h = 1024;
       const c = document.createElement("canvas");
@@ -187,14 +187,12 @@ export default function SnakeGame({ playerName = "player", siteLabel = "your-han
       c.height = h;
       const ctx = c.getContext("2d")!;
 
-      // bg gradient
       const g = ctx.createLinearGradient(0, 0, w, h);
       g.addColorStop(0, "#0b1020");
       g.addColorStop(1, "#0e172a");
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, w, h);
 
-      // glow arc
       ctx.save();
       ctx.globalAlpha = 0.25;
       ctx.fillStyle = "#22c55e";
@@ -219,7 +217,7 @@ export default function SnakeGame({ playerName = "player", siteLabel = "your-han
       ctx.fillText(`@${nameForCard || "player"}`, 44, 108);
       ctx.fillText(`Score: ${score}`, w - 44 - ctx.measureText(`Score: ${score}`).width, 108);
 
-      // tiny snake board illustration (14x10 cells)
+      // tiny snake board illustration
       const grid = 16,
         cols = 14,
         rows = 10;
@@ -317,15 +315,12 @@ export default function SnakeGame({ playerName = "player", siteLabel = "your-han
       overlayMessage.textContent = `Your score: ${snakeScore}`;
       overlay.classList.remove("hidden");
 
-      // hide download card button on game over
       downloadCard.classList.add("hidden");
 
-      // repurpose continue button as restart and center it
 continueBtn.textContent = "Start Over";
 continueBtn.classList.add("mx-auto", "block");
 continueBtn.onclick = () => {
   overlay.classList.add("hidden");
-  // DO NOT unhide download here (it's only for wins)
   startBtn.textContent = "start";
   snakeRewardGiven = false;
   running = false;
@@ -604,7 +599,6 @@ const keyHandler = (e: KeyboardEvent) => {
   const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
   const editing = tag === "input" || tag === "textarea" || (e.target as HTMLElement)?.isContentEditable;
 
-  // keys we own:
   const isGameKey = [
     "ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," ","Space","Enter","w","a","s","d",
   ].includes(e.key);
@@ -662,14 +656,12 @@ const keyHandler = (e: KeyboardEvent) => {
     const continueHandler = () => {
       overlay.classList.add("hidden");
       if (overlayTitle.textContent?.toLowerCase().includes("game over")) {
-        // back to title for a fresh run
         snakeRewardGiven = false;
         drawIdle();
         running = false;
         paused = false;
         startBtn.textContent = "start";
       } else {
-        // WIN path: resume same run after countdown
         if (GAMES[currentGameIndex] === "snake" && resumeGame) {
           countdownResume(3, () => resumeGame!());
           startBtn.textContent = "pause";
@@ -691,16 +683,17 @@ const keyHandler = (e: KeyboardEvent) => {
     };
   }, [playerName, siteLabel]);
 
+  
+
   return (
     <div className="game-card">
-      <div className="game-card__inner">
+      <div className="game-card__inner relative">
         <canvas
           ref={canvasRef}
           id="snake-canvas"
           tabIndex={0}
           className="rounded-[18px] w-full h-[360px] md:h-[420px] bg-slate-900/70 border border-white/10 shadow-2xl"
         />
-        {/* overlay shown on win or game over */}
         <div ref={overlayRef} id="game-overlay" className="game-overlay hidden">
           <div className="game-overlay-card">
             <h3 ref={overlayTitleRef} id="overlay-title" className="text-xl font-bold">

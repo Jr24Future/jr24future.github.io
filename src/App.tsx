@@ -18,11 +18,11 @@ function useHashLinkScroll(offset = 56) {
       if (!a) return;
 
       const href = a.getAttribute("href") || "";
-      if (!href.startsWith("#")) return;         // only pure hashes "#about"
+      if (!href.startsWith("#")) return;         
 
       e.preventDefault();
       e.stopPropagation();
-      scrollToSection(href, offset);             // JS smooth scroll with navbar offset
+      scrollToSection(href, offset);            
     };
 
     document.addEventListener("click", onClick);
@@ -34,24 +34,18 @@ export default function App() {
   const [showHint, setShowHint] = useState(true);
   const [showTopHint, setShowTopHint] = useState(false);
 
-  // ✅ ACTIVATE the global hash-link handler (56px ≈ your sticky header height)
   useHashLinkScroll(56);
 
-  // NEW: gently nudge the page down on first load so there's room to scroll up.
   useEffect(() => {
-    // Only if there's no hash (so deep-linking still lands exactly) and we're truly at the top.
     if (!location.hash && (window.scrollY ?? 0) < 2) {
-      // Avoid browsers restoring prior scroll pos
       if ("scrollRestoration" in history) {
         (history as any).scrollRestoration = "manual";
       }
-      // Small, instant nudge. (Use 24–40 if you want more headroom.)
       window.scrollTo(0, 24);
     }
   }, []);
 
   useEffect(() => {
-    // Reveal on scroll
     const revealables = Array.from(document.querySelectorAll<HTMLElement>(".reveal"));
     const io = new IntersectionObserver(
       entries => {
@@ -66,7 +60,7 @@ export default function App() {
     );
     revealables.forEach(el => io.observe(el));
 
-    // Track last Y so we know when user scrolls upward
+    // Track last Y 
     const lastY = { current: window.scrollY || 0 };
 
     const onScroll = () => {
@@ -74,11 +68,10 @@ export default function App() {
       const goingUp = y < lastY.current;
       lastY.current = y;
 
-      // Hide the down-arrow once user scrolls down a bit
+      // Hide the down-arrow once user scrolls 
       if (y > 60 && showHint) setShowHint(false);
 
-      // Show the TopHint when the user is at the top and moving upward
-      // (Works immediately thanks to the initial 24px nudge.)
+      // Show the TopHint 
       const atTop = y <= 2;
       const shouldShowTop = atTop && goingUp && !showHint;
       setShowTopHint(shouldShowTop);
@@ -86,7 +79,7 @@ export default function App() {
 
     window.addEventListener("scroll", onScroll, { passive: true });
 
-    // Also hide the arrow on explicit user intention
+    // hide the arrow on explicit intention
     const hideNow = () => setShowHint(false);
     window.addEventListener("wheel", hideNow, { once: true, passive: true });
     window.addEventListener("touchstart", hideNow, { once: true, passive: true });
@@ -114,12 +107,9 @@ export default function App() {
       <Navbar />
 
       <main>
-        {/* hero fills initial viewport (minus sticky header height ~48-60px) */}
         <section className="min-h-[calc(100dvh-3rem)] flex items-center" id="hello">
           <Hero />
         </section>
-
-        {/* sections revealed on scroll */}
         <section id="about" className="reveal">
           <About />
         </section>
@@ -132,14 +122,8 @@ export default function App() {
       </main>
 
       <Footer />
-
-      {/* centered down-arrow */}
       <ScrollHint show={showHint} />
-
-      {/* top easter egg */}
       <TopHint show={showTopHint} />
-
-      {/* desktop-goose buddy */}
       <DuckAssistant spriteUrl="/goose-sprites.png" />
     </div>
   );

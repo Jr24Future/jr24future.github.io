@@ -2,12 +2,62 @@ import SnakeGame from "./SnakeGame.tsx";
 import { site } from "../data";
 import Typewriter from "../random/Typewriter";
 import TechTicker from "./TechTicker.tsx";
+import { useEffect, useRef, useState } from "react";
+
+type Stage = "init" | "peeked" | "liked" | "done";
 
 export default function Hero() {
-  //const { value: role, done } = useTypingEffect("Software Engineer", 80);
+  const [showFluid, setShowFluid] = useState(false);
+  const [stage, setStage] = useState<Stage>("init");
+  const fluidTimer = useRef<number | null>(null);
+
+  // toast state (must be inside component)
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<number | null>(null);
+
+  function showToast(msg: string, ms = 5000) {
+    if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    setToast(msg);
+    toastTimer.current = window.setTimeout(() => setToast(null), ms);
+  }
+
+  function triggerFluidPeek() {
+    setShowFluid(true);
+    setStage("init");
+    if (fluidTimer.current) window.clearTimeout(fluidTimer.current);
+    fluidTimer.current = window.setTimeout(() => {
+      setShowFluid(false);
+      setStage("peeked"); // now show “if you liked / didn’t like”
+    }, 7000);
+  }
+
+  function handleLike() {
+    setShowFluid(true);
+    setStage("liked"); // permanent until exit
+    showToast("Yeeeeeeeey! have fun!", 2000);
+  }
+
+  function handleDislike() {
+    setShowFluid(false);
+    setStage("done"); // hide all buttons
+    showToast("Sorry, I'll get rid of it right away.", 5000);
+  }
+
+  function handleExit() {
+    setShowFluid(false);
+    setStage("done"); // back to snake game, no more overlay
+  }
+
+  useEffect(() => {
+    return () => {
+      if (fluidTimer.current) window.clearTimeout(fluidTimer.current);
+      if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    };
+  }, []);
 
   return (
     <section id="hello" className="wrap py-20 md:py-20 grid md:grid-cols-12 gap-8 items-center">
+      {/* LEFT */}
       <div className="md:col-span-7 relative md:pb-12 hero-glow">
         <p className="text-slate-300/80 font-mono">// Hello World, I am</p>
         <h1 className="mt-3 text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.05]">
@@ -33,18 +83,86 @@ export default function Hero() {
           <a className="btn-primary" href="#projects">view projects</a>
           <a className="btn-outline" href="#contact">contact</a>
         </div>
-  <div className="hidden md:block md:absolute md:inset-x-0 md:top-104 pr-15">
-    <TechTicker />
-  </div>
+
+        <div className="hidden md:block md:absolute md:inset-x-0 md:top-104 pr-15">
+          <TechTicker />
+        </div>
       </div>
 
-      <aside className="md:col-span-5 ">
-        <SnakeGame playerName={site.name} siteLabel={site.label} />
+      {/* RIGHT: Game card + fluid overlay */}
+      <aside className="md:col-span-5">
+        <div className="relative">
+          <SnakeGame playerName={site.name} siteLabel={site.label} />
+
+          {showFluid && (
+      <>
+        <iframe
+          title="WebGL Fluid Simulation"
+          src="https://paveldogreat.github.io/WebGL-Fluid-Simulation/"
+          className="absolute inset-0 w-full h-full rounded-[22px] border-0 shadow-inner fluid-fade"
+          loading="eager"
+          style={{ zIndex: 40 }}
+        />
+        {/* Floating exit when in persistent mode */}
+        {stage === "liked" && (
+          <button
+            onClick={handleExit}
+            className="absolute top-2 right-2 z-50 px-3 py-1.5 rounded-lg border border-white/20 bg-slate-900/70 text-slate-100 font-mono text-sm hover:bg-slate-900/85"
+            aria-label="Exit fluid simulation"
+            title="Exit"
+          >
+            ✕
+          </button>
+        )}
+      </>
+    )}
+  </div>
+
+        {/* Buttons outside the box */}
+        <div className="mt-3 flex justify-center gap-3">
+          {stage === "init" && !showFluid && (
+            <button onClick={triggerFluidPeek} className="btn-outline">
+              You want to try something fun... Click me
+            </button>
+          )}
+
+          {stage === "peeked" && (
+            <>
+              <button onClick={handleLike} className="btn-primary">Did you like it?</button>
+              <button onClick={handleDislike} className="btn-outline">Or Didn't</button>
+            </>
+          )}
+
+          {stage === "liked" && (
+            <button onClick={handleExit} className="btn-outline">exit</button>
+          )}
+
+          {stage === "done" && (
+      <button
+        onClick={() => { setShowFluid(true); setStage("liked"); }}
+        className="btn-thin">
+        try me again anytime
+      </button>
+    )}
+        </div>
+
+        {/* Ephemeral message below buttons/exit */}
+        {toast && (
+          <div className="mt-2 flex justify-center">
+            <div
+              className="mt-2 mx-auto w-fit inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 font-mono text-sm text-emerald-300 shadow"
+              role="status"
+              aria-live="polite"
+            >
+              {toast}
+            </div>
+          </div>
+        )}
       </aside>
 
       <div className="md:hidden mt-8">
-  <TechTicker />
-</div>
+        <TechTicker />
+      </div>
     </section>
   );
 }

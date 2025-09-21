@@ -14,9 +14,18 @@ const tech: Tech[] = [
   { name: "Docker",     src: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg" },
   { name: "SQL",        src: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mysql/mysql-original.svg" },
   { name: "C++",        src: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg" },
+  { name: "Java",       src: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg" },
+  { name: "C",          src: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/c/c-original.svg" },
+  { name: "HTML",       src: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/html5/html5-original.svg" },
+  { name: "CSS",        src: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/css3/css3-original.svg" },
+  { name: "JavaScript", src: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg" },
+  { name: "mongoDB",    src: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mongodb/mongodb-original.svg" },
+  { name: "Angular",    src: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/angular/angular-original.svg" },
+  { name: "BootStrap",  src: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/bootstrap/bootstrap-original.svg" },
+  { name: "json",       src: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/json/json-original.svg" },
 ];
 
-// Floating tooltip rendered into <body> so it can’t be clipped
+// Floating tooltip rendered into <body> so no clipping
 function FloatingTip({ show, text, x, y }: { show: boolean; text: string; x: number; y: number }) {
   if (!show) return null;
   return createPortal(
@@ -37,7 +46,7 @@ function FloatingTip({ show, text, x, y }: { show: boolean; text: string; x: num
 }
 
 export default function TechTicker() {
-  // duplicate for seamless loop
+  // seamless loop
   const items = tech.concat(tech);
 
   const [tip, setTip] = useState<{ show: boolean; text: string; x: number; y: number }>({
@@ -47,13 +56,14 @@ export default function TechTicker() {
     y: 0,
   });
 
+// bubble sits above icon
   const showTip = (el: HTMLElement, text: string) => {
     const r = el.getBoundingClientRect();
     setTip({
       show: true,
       text,
       x: Math.round(r.left + r.width / 2),
-      y: Math.round(r.top - 8), // bubble sits above icon
+      y: Math.round(r.top - 8), 
     });
   };
   const hideTip = () => setTip((s) => ({ ...s, show: false }));

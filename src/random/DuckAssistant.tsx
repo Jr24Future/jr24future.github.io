@@ -1,4 +1,3 @@
-// src/components/DuckAssistant.tsx
 import { useEffect, useRef, useState } from "react";
 import { scrollToSection } from "../lib/scrollToSection";
 
@@ -11,10 +10,10 @@ type Phase =
   | "getUp"
   | "walkAway"
   // second AFK sequence:
-  | "sleepWalkIn"   // walking from a corner to central spot
-  | "sleepSettle"   // settling one-shot (row14 0→5 OR row15 14→11)
-  | "sleepLoop"     // sleeping loop (row14 6→10 OR row15 10→6)
-  | "sleepWakeFin"  // on activity, finishing tail (row14 11→14 OR row15 5→0)
+  | "sleepWalkIn"   
+  | "sleepSettle"   
+  | "sleepLoop"     
+  | "sleepWakeFin"  
   | "flyOff"
   | "exit"
   | null;
@@ -25,9 +24,8 @@ const SHEET_H = 544;
 const FRAME_W = 32;
 const FRAME_H = 32;
 
-// Rows (0-based)
-const ROW_WALK_L = 5; // row 6: walk right→left (facing left)
-const ROW_WALK_R = 6; // row 7: walk left→right (facing right)
+const ROW_WALK_L = 5; // row 6: walk right left 
+const ROW_WALK_R = 6; // row 7: walk left right 
 const WALK_COLS = 4;
 
 const ROW_SLEEP_14 = 13; // row 14
@@ -37,9 +35,9 @@ const ROW_FLY_12 = 11; // row 12 (one facing)
 const ROW_FLY_13 = 12; // row 13 (the other facing)
 
 // Sit by projects
-const ROW_SIT_ONCE = 9;  // row 10 — play once
-const ROW_IDLE_LOOP = 8; // row 9 — loop
-const ROW_GETUP = 0;     // row 1 — play once
+const ROW_SIT_ONCE = 9;  // row 10 - play once
+const ROW_IDLE_LOOP = 8; // row 9 - loop
+const ROW_GETUP = 0;     // row 1 - play once
 
 // Generic counts (non-custom rows)
 const SIT_COLS = 6;
@@ -55,8 +53,8 @@ const SPEED = 2.2;
 const SNAP = 12;
 
 // Park to the RIGHT of the _projects tab
-const STAND_GAP_X = 26; // horizontal gap from tab’s right edge
-const STAND_Y = 18;     // slight drop below baseline
+const STAND_GAP_X = 26; 
+const STAND_Y = 18;     
 
 // Speech bubble cycling
 const QUACK_EVERY_LOOPS = 2;
@@ -64,23 +62,22 @@ const BUBBLE_SEQUENCE = ["Quack!", "Click", "Projects"];
 
 const defaultSprite = `${import.meta.env.BASE_URL}goose-sprites.png`;
 
-/* ---------------------------------------
-   Sleep/fly frame sequences (0-based)
---------------------------------------- */
+// ============== Sleep/fly frame sequences (0-based)==============
 
-// Row 14 (left-facing variant, typically):
-// settle: 0→5 once, loop: 6→10, wake finish: 11→14 once
+
+// Row 14 
+// settle: 0->5 once, loop: 6->10, wake finish: 11->14 once
 const S14_SETTLE_FWD = [0, 1, 2, 3, 4, 5];
 const S14_LOOP_FWD   = [6, 7, 8, 9, 10];
 const S14_WAKE_FWD   = [11, 12, 13, 14];
 
-// Row 15 (right-facing variant, mirrored):
-// settle: 14→11 once, loop: 10→6 (reverse), wake: 5→0 once
+// Row 15 
+// settle: 14->11 once, loop: 10->6 (reverse), wake: 5->0 once
 const S15_SETTLE_REV = [14, 13, 12, 11];
 const S15_LOOP_REV   = [10, 9, 8, 7, 6];
 const S15_WAKE_REV   = [5, 4, 3, 2, 1, 0];
 
-// Fly rows: loop 4↔5
+// Fly rows: loop 4<->5
 const FLY12_LOOP = [4, 5]; // row 12
 const FLY13_LOOP = [5, 4]; // row 13
 
@@ -181,12 +178,12 @@ export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl
     };
   }, [active]);
 
-  // inactivity: first escort run; later sleep (walk in); user activity during sleep → wake finish then fly
+  // inactivity: first escort run; 
   useEffect(() => {
     scheduleInactivityTimer();
 
     const onUserActivity = () => {
-      // If user interacts during any sleeping phase → start wake finish
+      // If interacts during any sleeping phase -> start wake finish
       if (active && (phaseRef.current === "sleepWalkIn" ||
                    phaseRef.current === "sleepSettle" ||
                    phaseRef.current === "sleepLoop")) {
@@ -207,7 +204,6 @@ export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl
       );
       clearInactivityTimer();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
   // utils
@@ -240,7 +236,6 @@ export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl
     rafRef.current = null;
     phaseRef.current = null;
     targetRef.current = null;
-    // unhide real cursor; remove fake cursor
     document.body.classList.remove("cursor-none");
     dragging.current = false;
     clearInactivityTimer();
@@ -252,7 +247,7 @@ export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl
     return { x: p.x + (dx / dist) * d, y: p.y + (dy / dist) * d };
   }
 
-  // === FIRST AFK: corner → mouse → projects → sit ===
+  // === FIRST AFK: corner -> mouse -> projects -> sit ===
   function startEscort() {
     const corners: Vec[] = [
       { x: -40, y: -40 },
@@ -292,52 +287,51 @@ export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl
     phaseRef.current = "sleepSettle";
     seqIndexRef.current = 0;
 
-    // If the last segment was moving right → prefer right-facing (row 15), else row 14.
+    // If the last segment was moving right -> prefer right-facing (row 15), else row 14.
     const movingRight = (targetRef.current?.x ?? posRef.current.x) >= posRef.current.x;
     if (movingRight) {
       sleepRowRef.current = 15;
       rowRef.current = ROW_SLEEP_15;
-      frameRef.current = S15_SETTLE_REV[0]; // 14 → 11
+      frameRef.current = S15_SETTLE_REV[0]; // 14-> 11
     } else {
       sleepRowRef.current = 14;
       rowRef.current = ROW_SLEEP_14;
-      frameRef.current = S14_SETTLE_FWD[0]; // 0 → 5
+      frameRef.current = S14_SETTLE_FWD[0]; // 0 -> 5
     }
   }
 
-  // 3) On user activity during/after sleep → finish & then fly
-  function startSleepWakeFinish() {
-    if (!active) return;
+    // 3) On user activity during/after sleep -> finish & then fly
+    function startSleepWakeFinish() {
+      if (!active) return;
 
     // If still walking in, just begin fly immediately (skip settle)
     if (phaseRef.current === "sleepWalkIn") {
       beginFly();
       return;
     }
-    // If settling or looping, run the correct finish sequence
+    // If settling or looping, just run normally
     phaseRef.current = "sleepWakeFin";
     seqIndexRef.current = 0;
 
     if (sleepRowRef.current === 14) {
       rowRef.current = ROW_SLEEP_14;
-      frameRef.current = S14_WAKE_FWD[0]; // 11→14
+      frameRef.current = S14_WAKE_FWD[0]; // 11 ->14
     } else if (sleepRowRef.current === 15) {
       rowRef.current = ROW_SLEEP_15;
-      frameRef.current = S15_WAKE_REV[0]; // 5→0
+      frameRef.current = S15_WAKE_REV[0]; // 5->0
     } else {
-      // fallback: no sleep row chosen; just fly
       beginFly();
     }
   }
 
-  // 4) Begin fly off-screen (left/right only), using correct row and 4↔5 loop
+  // 4) Begin fly off-screen (left/right only), using row 4<->5 loop
   function beginFly() {
     phaseRef.current = "flyOff";
     const exit = pickLateralExit(posRef.current);
     const goingRight = exit.x > posRef.current.x;
 
-    // Facing mapping (you said it was reversed earlier; this is the corrected version):
-    // goingRight → use ROW_FLY_12, goingLeft → use ROW_FLY_13
+    // Facing mapping 
+    // goingRight -> use ROW_FLY_12, goingLeft -> use ROW_FLY_13
     rowRef.current = goingRight ? ROW_FLY_12 : ROW_FLY_13;
 
     targetRef.current = exit;
@@ -354,17 +348,16 @@ export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl
       return;
     }
 
-    // choose frame delay (keep idle slower)
+    // choose frame delay
     const delay = phaseRef.current === "sitLoop" ? IDLE_FRAME_RATE_MS : FRAME_RATE_MS;
 
     if (now - lastFrameTime.current >= delay) {
       // advance frames by phase
       if (phaseRef.current === "sleepSettle") {
         if (sleepRowRef.current === 14) {
-          // 0→5 once
+          // 0->5 once
           seqIndexRef.current += 1;
           if (seqIndexRef.current >= S14_SETTLE_FWD.length) {
-            // into loop
             phaseRef.current = "sleepLoop";
             seqIndexRef.current = 0;
             frameRef.current = S14_LOOP_FWD[0];
@@ -372,10 +365,9 @@ export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl
             frameRef.current = S14_SETTLE_FWD[seqIndexRef.current];
           }
         } else if (sleepRowRef.current === 15) {
-          // 14→11 once
+          // 14->11 once
           seqIndexRef.current += 1;
           if (seqIndexRef.current >= S15_SETTLE_REV.length) {
-            // into loop
             phaseRef.current = "sleepLoop";
             seqIndexRef.current = 0;
             frameRef.current = S15_LOOP_REV[0];
@@ -408,7 +400,7 @@ export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl
           }
         }
       } else if (phaseRef.current === "flyOff") {
-        // flap 4↔5 forever until off-screen
+        // flap 4<->5 forever until off-screen
         if (rowRef.current === ROW_FLY_12) {
           seqIndexRef.current = nextLoopIndex(FLY12_LOOP, seqIndexRef.current);
           frameRef.current = FLY12_LOOP[seqIndexRef.current];
@@ -428,7 +420,7 @@ export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl
             : WALK_COLS;
         frameRef.current = (frameRef.current + 1) % cols;
 
-        // idle loop bubble cadence
+        // loop bubble cadence
         if (phaseRef.current === "sitLoop" && frameRef.current === 0) {
           idleLoopCount.current += 1;
           if (idleLoopCount.current % QUACK_EVERY_LOOPS === 0) {
@@ -443,7 +435,7 @@ export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl
       lastFrameTime.current = now;
     }
 
-    // non-moving phases (sit*, getUp, sleep*, i.e., all custom sleep except the walk-in)
+    // non-moving phases
     if (
       phaseRef.current === "sitInit" ||
       phaseRef.current === "sitLoop" ||
@@ -456,7 +448,7 @@ export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl
       if (phaseRef.current === "sitInit") rowRef.current = ROW_SIT_ONCE;
       else if (phaseRef.current === "sitLoop") rowRef.current = ROW_IDLE_LOOP;
       else if (phaseRef.current === "getUp") rowRef.current = ROW_GETUP;
-      // sleep* rows are already set
+      // dont for get sleep* rows are already set
 
       // draw sprite
       if (duckRef.current) {
@@ -488,7 +480,7 @@ export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl
       return;
     }
 
-    // moving phases: toMouse, toNav, walkAway, sleepWalkIn, flyOff (flyOff position also updated here)
+    // moving phases: toMouse, toNav, walkAway, sleepWalkIn, flyOff 
     const target = targetRef.current;
     if (target) {
       if (["toMouse", "toNav", "walkAway", "sleepWalkIn"].includes(String(phaseRef.current))) {
@@ -519,7 +511,7 @@ export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl
           fakeVisibleRef.current = true;
           document.body.classList.add("cursor-none");
 
-          // compute nav standing spot (to the right of _projects)
+          // compute nav spot (to the right of _projects)
           const projLink = document.querySelector('a[href="#projects"]') as HTMLElement | null;
           let navSpot: Vec = { x: innerWidth / 2 + STAND_GAP_X, y: 20 + STAND_Y };
           if (projLink) {
@@ -546,13 +538,13 @@ export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl
             fakeRef.current.style.opacity = "1";
           }
 
-          // sit down (row 10 once → row 9 loop)
+          // sit down (row 10 once -> row 9 loop)
           phaseRef.current = "sitInit";
           frameRef.current = 0;
         } else if (phaseRef.current === "walkAway") {
           stopDuck();
         } else if (phaseRef.current === "sleepWalkIn") {
-          // reached central spot → settle
+          // reached central spot -> settle
           beginSleepSettle();
         } else if (phaseRef.current === "flyOff") {
           stopDuck();
@@ -563,7 +555,7 @@ export default function DuckAssistant({ spriteUrl = defaultSprite }: { spriteUrl
     rafRef.current = requestAnimationFrame(tick);
   }
 
-  // screen click while idling → scroll to projects, then get up + walk away
+  // screen click while idling -> scroll to projects, then get up + walk away
   const handleOverlayClick = () => {
     setOverlayActive(false);
     scrollToSection("#projects", 56);
