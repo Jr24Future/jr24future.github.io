@@ -10,7 +10,7 @@ import TopHint from "./random/TopHint";
 import DuckAssistant from "./random/DuckAssistant";
 import { scrollToSection } from "./lib/scrollToSection";
 
-/* --- Global handler for #hash links anywhere in the app --- */
+/* --- Global handler for in-page #hash scroll --- */
 function useHashLinkScroll(offset = 56) {
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -18,17 +18,24 @@ function useHashLinkScroll(offset = 56) {
       if (!a) return;
 
       const href = a.getAttribute("href") || "";
-      if (!href.startsWith("#")) return;         
+
+      // Skip React Router navigation like "#/resume"
+      if (href.startsWith("#/")) return;
+
+      // Handle only pure in-page anchors (e.g. "#about")
+      if (!href.startsWith("#")) return;
 
       e.preventDefault();
       e.stopPropagation();
-      scrollToSection(href, offset);            
+      scrollToSection(href, offset);
     };
 
     document.addEventListener("click", onClick);
     return () => document.removeEventListener("click", onClick);
   }, [offset]);
 }
+
+
 
 export default function App() {
   const [showHint, setShowHint] = useState(true);

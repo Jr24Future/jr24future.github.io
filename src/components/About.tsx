@@ -166,7 +166,7 @@ export default function About() {
                   </div>
 
                   <div className="pt-3">
-                    <a href="/resume" className="btn-primary">see full version of resume</a>
+                    <a href="#/resume" className="btn-primary">see full version of resume</a>
                   </div>
                 </>
               )}
