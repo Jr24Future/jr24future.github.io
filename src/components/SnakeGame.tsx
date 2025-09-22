@@ -692,7 +692,7 @@ const keyHandler = (e: KeyboardEvent) => {
           ref={canvasRef}
           id="snake-canvas"
           tabIndex={0}
-          className="rounded-[18px] w-full h-[360px] md:h-[420px] bg-slate-900/70 border border-white/10 shadow-2xl"
+          className="block max-w-full rounded-[18px] w-full h-[360px] md:h-[420px] bg-slate-900/70 border border-white/10 shadow-2xl"
         />
         <div ref={overlayRef} id="game-overlay" className="game-overlay hidden">
           <div className="game-overlay-card">

@@ -71,8 +71,8 @@ export default function TechTicker() {
 
   return (
     <>
-      <div className="relative opacity-90 [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
-        <div className="ticker">
+      <div className="relative w-full overflow-hidden opacity-90 [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
+        <div className="ticker flex gap-6 animate-marquee whitespace-nowrap w-max">
           {items.map((t, i) => (
             <button
               key={i}

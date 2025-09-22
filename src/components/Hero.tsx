@@ -56,7 +56,7 @@ export default function Hero() {
   }, []);
 
   return (
-    <section id="hello" className="wrap py-20 md:py-20 grid md:grid-cols-12 gap-8 items-center">
+    <section id="hello" className="wrap py-20 md:py-20 grid md:grid-cols-12 gap-8 items-center overflow-x-hidden">
       {/* LEFT */}
       <div className="md:col-span-7 relative md:pb-12 hero-glow">
         <p className="text-slate-300/80 font-mono">// Hello World, I am</p>
@@ -68,12 +68,12 @@ export default function Hero() {
           <Typewriter text={">_Software_Engineer"} />
         </p>
 
-        <div className="mt-4 space-y-2 text-slate-300/85 font-mono">
+        <div className="mt-4 space-y-2 text-slate-300/85 font-mono break-words">
           <p>// {site.blurb}</p>
-          <p>
+          <p className="break-all">
             <span style={{ color: "rgb(110,110,247)" }}>const</span>{" "}
             <span className="text-emerald-300">githubLink</span> ={" "}
-            <a className="text-cyan-300 hover:underline" href={site.github} target="_blank" rel="noreferrer">
+            <a className="text-cyan-300 hover:underline break-all" href={site.github} target="_blank" rel="noreferrer">
               "{site.github}"
             </a>
           </p>
@@ -84,7 +84,7 @@ export default function Hero() {
           <a className="btn-outline" href="#contact">contact</a>
         </div>
 
-        <div className="hidden md:block md:absolute md:inset-x-0 md:top-104 pr-15">
+        <div className="hidden md:block absolute inset-x-0 top-[26rem] px-4 overflow-hidden max-w-full">
           <TechTicker />
         </div>
       </div>
@@ -160,7 +160,7 @@ export default function Hero() {
         )}
       </aside>
 
-      <div className="md:hidden mt-8">
+      <div className="md:hidden mt-8 overflow-hidden max-w-full">
         <TechTicker />
       </div>
     </section>

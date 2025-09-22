@@ -260,15 +260,15 @@ const visualLines = useLineCount(preRef, [codeText], gridRef);
     <span className="ml-2 font-mono text-slate-200/90">{/* filename */}</span>
   </div>
 
-  <div className="grid grid-cols-[56px_1fr] p-5 gap-0">
-    <ol className="editor-lines text-slate-500/80">
+  <div className="grid grid-cols-[56px_1fr] p-5 gap-0 overflow-hidden">
+    <ol className="editor-lines text-slate-500/80 w-[56px] shrink-0">
       {Array.from({ length: visualLines }).map((_, i) => (
         <li key={i} className="leading-7 tabular-nums">{i + 1}</li>
       ))}
     </ol>
     <pre
       ref={preRef}
-      className="editor-code font-mono text-slate-200/90 text-[15px] leading-7 whitespace-pre-wrap m-0"
+      className="editor-code font-mono text-slate-200/90 text-[15px] leading-7 whitespace-pre-wrap m-0 break-words min-w-0"
     >
       {codeText}
     </pre>
