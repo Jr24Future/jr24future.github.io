@@ -148,7 +148,7 @@ const visualLines = useLineCount(preRef, [codeText], gridRef);
               {tab === "interests" && (
                 <>
                   <div className="text-slate-400">// currently into:</div>
-                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="mt-2 gap-2">
                     {interestsNow.map((it) => {
                       const L = it.label.toLowerCase();
                       let Icon = Code2;

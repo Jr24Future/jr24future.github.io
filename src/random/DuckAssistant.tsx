@@ -45,7 +45,7 @@ const IDLE_COLS = 4;
 const GETUP_COLS = 6;
 
 // Timings
-const FIRST_INACTIVITY_MS = 30_000;
+const FIRST_INACTIVITY_MS = 60_000;
 const LATER_INACTIVITY_MS = 30_000;
 const FRAME_RATE_MS = 120;
 const IDLE_FRAME_RATE_MS = 300; 
