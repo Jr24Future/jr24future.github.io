@@ -74,11 +74,10 @@ export const about = {
     "Automation and tiny tools",
   ],
   education: [
-    { school: "Iowa State University", degree: "B.S. Software Engineering, Minor in Cybersecurity", when: "2022 — Present" },
-    { school: "Indian Hills Community College | Sigourney highschool", degree: "took classes related to front-end + HighSchool degree", When: "2019 — 2021" },
-    { school: "Mavi Teknik Lisesi", degree: ""}
-
-
+    { school: "Iowa State University",          degree: "B.S. Software Engineering, Minor in Cybersecurity",  when: "2022 — Present" },
+    { school: "Indian Hills Community College", degree: "studied front-end + MySQL",                          when: "2020 — 2021" },
+    { school: "Sigourney highschool",           degree: "HighSchool degree",                                  when: "2019 — 2021" },
+    { school: "Mavi Teknik Lisesi",             degree: "Mechatronics",                                       when: "2016 — 2019"},
   ],
 };
 

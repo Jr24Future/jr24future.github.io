@@ -10,7 +10,8 @@ createRoot(document.getElementById("root")!).render(
     <HashRouter basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route path="/" element={<App />} />
-        <Route path="/resume" element={<ResumePage />} />
+        <Route path="/resume" element={<ResumePage />} />\
+        <Route path="*" element={<App />} />
       </Routes>
     </HashRouter>
   </StrictMode>

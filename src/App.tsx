@@ -52,6 +52,14 @@ export default function App() {
     }
   }, []);
 
+  useEffect(() => {
+    const h = window.location.hash || "";
+    if (h && !h.startsWith("#/")) {
+      // slight delay so layout is ready
+      setTimeout(() => scrollToSection(h, 56), 0);
+    }
+  }, []);
+
 useEffect(() => {
   const els = Array.from(document.querySelectorAll<HTMLElement>(".reveal"));
 
@@ -109,6 +117,36 @@ useEffect(() => {
     window.removeEventListener("keydown", keyOnce);
   };
 }, [showHint, setShowHint, setShowTopHint]);
+
+ useEffect(() => {
+    const sections = Array.from(
+      document.querySelectorAll<HTMLElement>("section[id]")
+    );
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const id = entry.target.getAttribute("id");
+            if (!id) return;
+
+            // only update for real in-page anchors
+            const newHash = `#${id}`;
+            if (window.location.hash !== newHash) {
+              history.replaceState(null, "", newHash);
+            }
+          }
+        });
+      },
+      {
+        root: null,
+        threshold: 0.5, // section must be at least 50% visible
+      }
+    );
+
+    sections.forEach((sec) => observer.observe(sec));
+    return () => observer.disconnect();
+  }, []);
 
 
   return (
