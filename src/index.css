@@ -249,9 +249,8 @@ body::after{
 }
 .cursor-none * { cursor: none !important; }
 
-.editor-lines { counter-reset: line; }
-.editor-lines li { counter-increment: line; }
-.editor-lines li::before { content: counter(line); }
+:root { --editor-top-adjust: 0px; }    /* tweak to 1px if needed */
+.editor-lines { margin-top: var(--editor-top-adjust); }
 
 .tab-dot { display:inline-block; width:10px; height:10px; border-radius:9999px;
   background: radial-gradient(circle at 30% 30%, #9ca3af 20%, #475569 70%, transparent 100%); }

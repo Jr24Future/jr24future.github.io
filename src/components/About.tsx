@@ -1,15 +1,30 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { about, site, resumeShort } from "../data";
-import { Github, Linkedin, Instagram, Link as LinkIcon, GraduationCap, BookOpen, Code2, Shield } from "lucide-react";
+import {
+  Github,
+  Linkedin,
+  Instagram,
+  Link as LinkIcon,
+  GraduationCap,
+  Code2,
+  Shield,
+  Cpu,
+  Terminal,
+  Server,
+  Camera,
+  Palette,
+  Boxes,
+} from "lucide-react";
+import useLineCount from "../lib/useLineCount";
 import { interestsNow, schools, resumeSkillsShort, resumeProjectLinks } from "../data";
 
 type TabKey = "bio" | "interests" | "education" | "resume";
 
 const TABS: { key: TabKey; label: string }[] = [
-  { key: "bio",        label: "bio" },
-  { key: "interests",  label: "interests" },
-  { key: "education",  label: "education" },
-  { key: "resume",     label: "resume" },
+  { key: "bio", label: "bio" },
+  { key: "interests", label: "interests" },
+  { key: "education", label: "education" },
+  { key: "resume", label: "resume" },
 ];
 
 export default function About() {
@@ -17,21 +32,29 @@ export default function About() {
 
   const editorLines = useMemo(() => {
     if (tab === "bio") return about.bio;
-    if (tab === "interests") return ["/** interests */", ...about.interests.map(t => `- ${t}`)];
+    if (tab === "interests") return ["/** interests */", ...about.interests.map((t) => `- ${t}`)];
     if (tab === "education")
-      return ["/** education */", ...about.education.map(e => `- ${e.school} — ${e.degree} (${e.when})`)];
+      return [
+        "/** education */",
+        ...about.education.map((e) => `- ${e.school} — ${e.degree} (${e.when})`),
+      ];
     // resume (short)
     const lines: string[] = [];
     lines.push("/** resume (short) */", "", "// summary");
-    resumeShort.summary.forEach(s => lines.push(s));
+    resumeShort.summary.forEach((s) => lines.push(s));
     lines.push("", "// experience");
-    resumeShort.experience.forEach(x => {
+    resumeShort.experience.forEach((x) => {
       lines.push(`- ${x.role} @ ${x.org} (${x.when})`);
-      x.points.forEach(p => lines.push(`  • ${p}`));
+      x.points.forEach((p) => lines.push(`  • ${p}`));
     });
-    lines.push("", "// skills", resumeShort.skills.join(", "), "", '// see full → /resume');
+    lines.push("", "// skills", resumeShort.skills.join(", "), "", "// see full → /resume");
     return lines;
   }, [tab]);
+
+const gridRef = useRef<HTMLDivElement>(null);
+const preRef  = useRef<HTMLPreElement>(null);
+const codeText = useMemo(() => editorLines.join("\n"), [editorLines]);
+const visualLines = useLineCount(preRef, [codeText], gridRef);
 
   return (
     <section id="about" className="wrap py-20 border-t border-white/5">
@@ -55,7 +78,7 @@ export default function About() {
                     "px-3 py-1.5 rounded-lg border text-xs transition",
                     tab === key
                       ? "border-emerald-400/50 bg-emerald-400/10 text-emerald-300"
-                      : "border-white/10 hover:bg-white/10"
+                      : "border-white/10 hover:bg-white/10",
                   ].join(" ")}
                   aria-current={tab === key ? "page" : undefined}
                 >
@@ -70,24 +93,50 @@ export default function About() {
               {tab === "bio" && (
                 <>
                   <div className="space-y-1">
-                    <div><span className="text-slate-400">// name:</span> {site.name}</div>
-                    <div><span className="text-slate-400">// role:</span> {site.role}</div>
-                    <div><span className="text-slate-400">// email:</span> {site.email}</div>
-                    <div><span className="text-slate-400">// location:</span> {site.location}</div>
+                    <div>
+                      <span className="text-slate-400">// name:</span> {site.name}
+                    </div>
+                    <div>
+                      <span className="text-slate-400">// role:</span> {site.role}
+                    </div>
+                    <div>
+                      <span className="text-slate-400">// email:</span> {site.email}
+                    </div>
+                    <div>
+                      <span className="text-slate-400">// location:</span> {site.location}
+                    </div>
                   </div>
 
                   <hr className="border-white/10 my-2" />
 
                   <div>find me in:</div>
                   <div className="mt-2 flex gap-2 text-slate-100">
-                    <a className="icon-btn hover:text-green-500" href={site.github} target="_blank" rel="noreferrer noopener" aria-label="GitHub">
+                    <a
+                      className="icon-btn hover:text-green-500"
+                      href={site.github}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      aria-label="GitHub"
+                    >
                       <Github className="w-5 h-5" />
                     </a>
-                    <a className="icon-btn hover:text-blue-500" href={site.linkedin} target="_blank" rel="noreferrer noopener" aria-label="LinkedIn">
+                    <a
+                      className="icon-btn hover:text-blue-500"
+                      href={site.linkedin}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      aria-label="LinkedIn"
+                    >
                       <Linkedin className="w-5 h-5" />
                     </a>
                     {site.instagram && (
-                      <a className="icon-btn hover:text-pink-500" href={site.instagram} target="_blank" rel="noreferrer noopener" aria-label="Instagram">
+                      <a
+                        className="icon-btn hover:text-pink-500"
+                        href={site.instagram}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        aria-label="Instagram"
+                      >
                         <Instagram className="w-5 h-5" />
                       </a>
                     )}
@@ -99,23 +148,44 @@ export default function About() {
               {tab === "interests" && (
                 <>
                   <div className="text-slate-400">// currently into:</div>
-                  <div className="mt-2 grid grid-cols-1 gap-2">
-                    {interestsNow.map((it) => (
-                      <a
-                        key={it.label}
-                        href={it.href}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-white/10 hover:bg-white/10"
-                      >
-                        {it.label.includes("TypeScript") && <Code2 className="w-4 h-4 text-sky-300" />}
-                        {it.label.includes("React") && <Code2 className="w-4 h-4 text-cyan-300" />}
-                        {it.label.includes("Canvas") && <BookOpen className="w-4 h-4 text-emerald-300" />}
-                        {it.label.includes("Security") && <Shield className="w-4 h-4 text-emerald-300" />}
-                        <span>{it.label}</span>
-                        <LinkIcon className="ml-auto w-3.5 h-3.5 opacity-60" />
-                      </a>
-                    ))}
+                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {interestsNow.map((it) => {
+                      const L = it.label.toLowerCase();
+                      let Icon = Code2;
+
+                      if (L.includes("typescript")) Icon = Code2;
+                      else if (L.includes("react")) Icon = Code2;
+                      else if (L.includes("cyber") || L.includes("cve")) Icon = Shield;
+                      else if (L.includes("deepseek")) Icon = Cpu;
+                      else if (L.includes("shell") || L.includes(".sh") || L.includes("auto"))
+                        Icon = Terminal;
+                      else if (L.includes("raspberry") || L.includes("embedded")) Icon = Cpu;
+                      else if (L.includes("fusion") || L.includes("3d")) Icon = Boxes;
+                      else if (
+                        L.includes("homelab") ||
+                        L.includes("firewall") ||
+                        L.includes("dns") ||
+                        L.includes("ports")
+                      )
+                        Icon = Server;
+                      else if (L.includes("nikon") || L.includes("photo")) Icon = Camera;
+                      else if (L.includes("lightroom") || L.includes("editing")) Icon = Palette;
+
+                      return (
+                        <a
+                          key={it.label}
+                          href={it.href}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-white/10 hover:bg-white/10"
+                          title={it.label}
+                        >
+                          <Icon className="w-4 h-4 text-emerald-300" />
+                          <span>{it.label}</span>
+                          <LinkIcon className="ml-auto w-3.5 h-3.5 opacity-60" />
+                        </a>
+                      );
+                    })}
                   </div>
                 </>
               )}
@@ -147,7 +217,12 @@ export default function About() {
                   <div className="text-slate-400">// skills</div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {resumeSkillsShort.map((sk) => (
-                      <span key={sk} className="px-2 py-1 rounded-lg border border-white/10 bg-white/5">{sk}</span>
+                      <span
+                        key={sk}
+                        className="px-2 py-1 rounded-lg border border-white/10 bg-white/5"
+                      >
+                        {sk}
+                      </span>
                     ))}
                   </div>
 
@@ -166,7 +241,9 @@ export default function About() {
                   </div>
 
                   <div className="pt-3">
-                    <a href="#/resume" className="btn-primary">see full version of resume</a>
+                    <a href="#/resume" onClick={() => window.scrollTo(0, 0)} className="btn-primary">
+                      see full version of resume
+                    </a>
                   </div>
                 </>
               )}
@@ -175,38 +252,35 @@ export default function About() {
         </aside>
 
         {/* MIDDLE: editor */}
-        <section className="lg:col-span-6 rounded-xl border border-white/10 bg-white/5 overflow-hidden">
-          <div className="flex items-center gap-2 px-3 h-10 border-b border-white/10">
-            <span className="tab-dot"></span>
-            <span className="tab-dot"></span>
-            <span className="tab-dot"></span>
-            <span className="ml-2 font-mono text-slate-200/90">
-              {tab === "bio" ? "about_me.ts"
-                : tab === "interests" ? "interests.md"
-                : tab === "education" ? "education.md"
-                : "resume.ts"}
-            </span>
-          </div>
+        <section ref={gridRef} className="lg:col-span-6 rounded-xl border border-white/10 bg-white/5 overflow-hidden">
+  <div className="flex items-center gap-2 px-3 h-10 border-b border-white/10">
+    <span className="tab-dot"></span>
+    <span className="tab-dot"></span>
+    <span className="tab-dot"></span>
+    <span className="ml-2 font-mono text-slate-200/90">{/* filename */}</span>
+  </div>
 
-          <div className="grid grid-cols-[56px_1fr]">
-            <ol className="editor-lines text-slate-500/80">
-              {editorLines.map((_, i) => <li key={i} />)}
-            </ol>
-            <div className="p-5">
-              <pre className="editor-code font-mono text-slate-200/90 text-[15px] leading-7 whitespace-pre-wrap">
-                {editorLines.join("\n")}
-              </pre>
-              {/* If you prefer the CTA here instead, move it from the left card */}
-            </div>
-          </div>
-        </section>
+  <div className="grid grid-cols-[56px_1fr] p-5 gap-0">
+    <ol className="editor-lines text-slate-500/80">
+      {Array.from({ length: visualLines }).map((_, i) => (
+        <li key={i} className="leading-7 tabular-nums">{i + 1}</li>
+      ))}
+    </ol>
+    <pre
+      ref={preRef}
+      className="editor-code font-mono text-slate-200/90 text-[15px] leading-7 whitespace-pre-wrap m-0"
+    >
+      {codeText}
+    </pre>
+  </div>
+</section>
+
 
         {/* RIGHT: code snippet card */}
         <aside className="lg:col-span-3 rounded-xl border border-white/10 bg-white/5 p-4">
           <p className="font-mono text-slate-300/90">// Code snippet:</p>
           <div className="mt-3 p-4 rounded-xl border border-white/10 bg-slate-900/40">
-            <pre className="font-mono text-[13px] leading-6 overflow-x-auto">
-{`type Role = "Support" | "Engineer";
+            <pre className="font-mono text-[13px] leading-6 overflow-x-auto">{`type Role = "Support" | "Engineer";
 interface Experience {
   role: Role;
   org: string;
@@ -219,8 +293,7 @@ const current: Experience = {
   org: "Iowa State University",
   start: "Oct 2023",
   end: "Present",
-};`}
-            </pre>
+};`}</pre>
           </div>
         </aside>
       </div>
