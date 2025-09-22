@@ -11,7 +11,7 @@ const education: Edu[] = [
   {
     school: "Iowa State University — B.S. Software Engineering (Minor: Cybersecurity)",
     when: "2022 — Present",
-    note: "Currently a junior.",
+    note: "Currently a Senior.",
   },
   {
     school: "Sigourney Jr-Sr High School — High School Diploma",

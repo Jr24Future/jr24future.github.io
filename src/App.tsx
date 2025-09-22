@@ -52,58 +52,64 @@ export default function App() {
     }
   }, []);
 
-  useEffect(() => {
-    const revealables = Array.from(document.querySelectorAll<HTMLElement>(".reveal"));
-    const io = new IntersectionObserver(
-      entries => {
-        entries.forEach(e => {
-          if (e.isIntersecting) {
-            e.target.classList.add("revealed");
-            if ((e.target as HTMLElement).id === "about") setShowHint(false);
-          }
-        });
-      },
-      { threshold: 0.1, rootMargin: "0px 0px -3% 0px" }
-    );
-    revealables.forEach(el => io.observe(el));
+useEffect(() => {
+  const els = Array.from(document.querySelectorAll<HTMLElement>(".reveal"));
 
-    // Track last Y 
-    const lastY = { current: window.scrollY || 0 };
+  const io = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((e) => {
+        const el = e.target as HTMLElement;
 
-    const onScroll = () => {
-      const y = window.scrollY || 0;
-      const goingUp = y < lastY.current;
-      lastY.current = y;
+        if (e.isIntersecting) {
+          el.classList.add("is-visible");
+          // one-time hint hide when #about first appears
+          if (el.id === "about") setShowHint(false);
+        } else {
+          el.classList.remove("is-visible");
+        }
+      });
+    },
+    {
+      threshold: 0.15,              // ~15% visible to count as "in"
+      root: null,
+      rootMargin: "0px 0px -8% 0px" // start hiding a touch before bottom
+    }
+  );
 
-      // Hide the down-arrow once user scrolls 
-      if (y > 60 && showHint) setShowHint(false);
+  els.forEach((el) => io.observe(el));
 
-      // Show the TopHint 
-      const atTop = y <= 2;
-      const shouldShowTop = atTop && goingUp && !showHint;
-      setShowTopHint(shouldShowTop);
-    };
+  // your arrow/top-hint logic can stay as-is:
+  const lastY = { current: window.scrollY || 0 };
+  const onScroll = () => {
+    const y = window.scrollY || 0;
+    const goingUp = y < lastY.current;
+    lastY.current = y;
 
-    window.addEventListener("scroll", onScroll, { passive: true });
+    if (y > 60 && showHint) setShowHint(false);
+    const atTop = y <= 2;
+    setShowTopHint(atTop && goingUp && !showHint);
+  };
 
-    // hide the arrow on explicit intention
-    const hideNow = () => setShowHint(false);
-    window.addEventListener("wheel", hideNow, { once: true, passive: true });
-    window.addEventListener("touchstart", hideNow, { once: true, passive: true });
-    const keyOnce = (e: KeyboardEvent) => {
-      if (["ArrowDown","PageDown"," ","Space","Enter"].includes(e.key)) setShowHint(false);
-      window.removeEventListener("keydown", keyOnce);
-    };
-    window.addEventListener("keydown", keyOnce);
+  window.addEventListener("scroll", onScroll, { passive: true });
 
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("wheel", hideNow);
-      window.removeEventListener("touchstart", hideNow);
-      window.removeEventListener("keydown", keyOnce);
-      io.disconnect();
-    };
-  }, [showHint]);
+  const hideNow = () => setShowHint(false);
+  window.addEventListener("wheel", hideNow, { once: true, passive: true });
+  window.addEventListener("touchstart", hideNow, { once: true, passive: true });
+  const keyOnce = (e: KeyboardEvent) => {
+    if (["ArrowDown","PageDown"," ","Space","Enter"].includes(e.key)) setShowHint(false);
+    window.removeEventListener("keydown", keyOnce);
+  };
+  window.addEventListener("keydown", keyOnce);
+
+  return () => {
+    io.disconnect();
+    window.removeEventListener("scroll", onScroll);
+    window.removeEventListener("wheel", hideNow);
+    window.removeEventListener("touchstart", hideNow);
+    window.removeEventListener("keydown", keyOnce);
+  };
+}, [showHint, setShowHint, setShowTopHint]);
+
 
   return (
     <div className="min-h-dvh">
@@ -114,7 +120,7 @@ export default function App() {
       <Navbar />
 
       <main>
-        <section className="min-h-[calc(100dvh-3rem)] flex items-center" id="hello">
+        <section className="min-h-[calc(100dvh-3rem)] flex items-center reveal" id="hello" >
           <Hero />
         </section>
         <section id="about" className="reveal">

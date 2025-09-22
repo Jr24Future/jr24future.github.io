@@ -6,7 +6,7 @@ export const site = {
   blurb:
     "Sit back, relax, and enjoy a cup of coffee. Play classic arcade games, or explore what I’ve been building, otherwise hang out with the Goose.",
   github: "https://github.com/Jr24Future",
-  linkedin: "https://www.linkedin.com/in/your-handle",
+  linkedin: "https://www.linkedin.com/in/rr-ll-software",
   email: "errollbarker1234@gmail.com",
   instagram: "https://www.instagram.com/jr_frames_/", 
 };
@@ -66,13 +66,19 @@ export const about = {
     "I will also never say no to a good cup of coffee. ☕️",
   ],
   interests: [
+    "When it comes to my interests it depends on what I am currently working on ",
     "TypeScript · React · Vite",
+
     "Canvas/WebGL toys",
     "Security & CTFs",
     "Automation and tiny tools",
   ],
   education: [
-    { school: "Iowa State University", degree: "B.S. Software Engineering, Minor in Cybersecurity", when: "2023 — Present" },
+    { school: "Iowa State University", degree: "B.S. Software Engineering, Minor in Cybersecurity", when: "2022 — Present" },
+    { school: "Indian Hills Community College | Sigourney highschool", degree: "took classes related to front-end + HighSchool degree", When: "2019 — 2021" },
+    { school: "Mavi Teknik Lisesi", degree: ""}
+
+
   ],
 };
 
