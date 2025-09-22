@@ -52,14 +52,6 @@ export default function App() {
     }
   }, []);
 
-  useEffect(() => {
-    const h = window.location.hash || "";
-    if (h && !h.startsWith("#/")) {
-      // slight delay so layout is ready
-      setTimeout(() => scrollToSection(h, 56), 0);
-    }
-  }, []);
-
 useEffect(() => {
   const els = Array.from(document.querySelectorAll<HTMLElement>(".reveal"));
 
@@ -150,7 +142,7 @@ useEffect(() => {
 
 
   return (
-    <div className="min-h-dvh w-full overflow-x-hidden">
+    <div className="min-h-dvh">
       <a href="#hello" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-2 focus:py-1 focus:rounded focus:bg-yellow-300 focus:text-black">
         Skip to content
       </a>
