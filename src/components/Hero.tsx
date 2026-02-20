@@ -1,4 +1,4 @@
-import SnakeGame from "./SnakeGame.tsx";
+import ArcadeGame from "./ArcadeGame";
 import { site } from "../data";
 import Typewriter from "../random/Typewriter";
 import TechTicker from "./TechTicker.tsx";
@@ -110,51 +110,8 @@ export default function Hero() {
       {/* RIGHT: Game card + fluid overlay */}
       <aside className="md:col-span-5">
         <div className="relative">
-          {/* UPDATED: render snake or placeholder, and pass onSwitchGame */}
-          {gameView === "snake" ? (
-            <SnakeGame
-              playerName={site.name}
-              siteLabel={site.label}
-              onSwitchGame={handleSwitchGame}
-            />
-          ) : (
-            // Placeholder until you create TetrisGame.tsx
-            <div className="game-card">
-              <div className="game-card__inner relative">
-                <div className="block max-w-full rounded-[18px] w-full h-[360px] md:h-[420px] bg-slate-900/70 border border-white/10 shadow-2xl flex items-center justify-center">
-                  <div className="text-center px-6">
-                    <div className="font-mono text-emerald-300 text-xl">
-                      TETRIS
-                    </div>
-                    <div className="mt-2 font-mono text-slate-300/80 text-sm">
-                      // coming soon
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex items-center justify-between gap-4">
-                  <div className="hidden sm:block text-sm text-slate-200/90">
-                    <p className="font-mono">// build in progress</p>
-                    <p className="font-mono">// switch back anytime</p>
-                    <p className="font-mono">// 👇</p>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button className="btn-primary" disabled aria-disabled="true">
-                      play
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-outline"
-                      onClick={handleSwitchGame}
-                    >
-                      switch game
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+           <ArcadeGame playerName={site.name} siteLabel={site.label} />
+          
 
           {showFluid && (
             <>

@@ -2,16 +2,29 @@ import { useState } from "react";
 import SnakeGame from "./SnakeGame";
 import TetrisGame from "./TetrisGame";
 
+type Props = {
+  playerName?: string;
+  siteLabel?: string;
+};
+
 type GameKey = "snake" | "tetris";
 
-export default function ArcadeGame() {
+export default function ArcadeGame({ playerName, siteLabel }: Props) {
   const [game, setGame] = useState<GameKey>("snake");
 
-  const switchGame = () => setGame((g) => (g === "snake" ? "tetris" : "snake"));
+  const handleSwitchGame = () => {
+    setGame((g) => (g === "snake" ? "tetris" : "snake"));
+  };
 
   if (game === "snake") {
-    return <SnakeGame onSwitchGame={switchGame} />;
+    return (
+      <SnakeGame
+        playerName={playerName}
+        siteLabel={siteLabel}
+        onSwitchGame={handleSwitchGame}
+      />
+    );
   }
 
-  return <TetrisGame onSwitchGame={switchGame} />;
+  return <TetrisGame onSwitchGame={handleSwitchGame} />;
 }
