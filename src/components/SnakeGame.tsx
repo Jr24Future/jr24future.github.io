@@ -1,11 +1,16 @@
 import { useEffect, useRef } from "react";
 
 type Props = {
-  playerName?: string;   // for the downloadable card
-  siteLabel?: string;    // fallback handle on the card
+  playerName?: string; // for the downloadable card
+  siteLabel?: string; // fallback handle on the card
+  onSwitchGame?: () => void; // NEW: lets parent switch to another game (ex: Tetris)
 };
 
-export default function SnakeGame({ playerName = "player", siteLabel = "your-handle" }: Props) {
+export default function SnakeGame({
+  playerName = "player",
+  siteLabel = "your-handle",
+  onSwitchGame,
+}: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const startBtnRef = useRef<HTMLButtonElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -45,7 +50,7 @@ export default function SnakeGame({ playerName = "player", siteLabel = "your-han
       if (isCountingDown) return;
       isCountingDown = true;
 
-      const container = canvas.parentElement!; 
+      const container = canvas.parentElement!;
       container.style.position = "relative";
 
       const overlayDiv = document.createElement("div");
@@ -60,7 +65,7 @@ export default function SnakeGame({ playerName = "player", siteLabel = "your-han
         if (n === 0) {
           overlayDiv.remove();
           isCountingDown = false;
-          done(); 
+          done();
           return;
         }
         bubble.textContent = String(n);
@@ -76,8 +81,6 @@ export default function SnakeGame({ playerName = "player", siteLabel = "your-han
       };
       tick();
     }
-
-    
 
     type GameKind = "snake" | "invaders";
     // ------- Reward system state -------
@@ -317,17 +320,16 @@ export default function SnakeGame({ playerName = "player", siteLabel = "your-han
 
       downloadCard.classList.add("hidden");
 
-continueBtn.textContent = "Start Over";
-continueBtn.classList.add("mx-auto", "block");
-continueBtn.onclick = () => {
-  overlay.classList.add("hidden");
-  startBtn.textContent = "start";
-  snakeRewardGiven = false;
-  running = false;
-  paused = false;
-  drawIdle();
-};
-
+      continueBtn.textContent = "Start Over";
+      continueBtn.classList.add("mx-auto", "block");
+      continueBtn.onclick = () => {
+        overlay.classList.add("hidden");
+        startBtn.textContent = "start";
+        snakeRewardGiven = false;
+        running = false;
+        paused = false;
+        drawIdle();
+      };
     }
 
     const GAMES: GameKind[] = ["snake", "invaders"];
@@ -541,14 +543,14 @@ continueBtn.onclick = () => {
 
         if (running && !paused) raf = requestAnimationFrame(loop);
       }
-    resumeGame = () => {
-      if (!raf) {
-        running = true;
-        startBtn.textContent = "pause";  // <-- ensure correct label on resume
-        canvas.focus();                  // optional: keep keyboard focus
-        raf = requestAnimationFrame(loop);
-      }
-    };
+      resumeGame = () => {
+        if (!raf) {
+          running = true;
+          startBtn.textContent = "pause"; // <-- ensure correct label on resume
+          canvas.focus(); // optional: keep keyboard focus
+          raf = requestAnimationFrame(loop);
+        }
+      };
 
       function render() {
         const ctx2 = canvas.getContext("2d")!;
@@ -581,45 +583,51 @@ continueBtn.onclick = () => {
       if (running && !paused) raf = requestAnimationFrame(loop);
     }
 
-function startGame() {
-  if (running) return;
-  overlay.classList.add("hidden");
-  paused = false;
-  running = true;
-  canvas.width = GRID * CELL;
-  canvas.height = GRID * CELL;
-  downloadCard.classList.add("hidden");  
-  snakeStart();
-  startBtn.textContent = "pause";
-  canvas.focus();                          
-}
+    function startGame() {
+      if (running) return;
+      overlay.classList.add("hidden");
+      paused = false;
+      running = true;
+      canvas.width = GRID * CELL;
+      canvas.height = GRID * CELL;
+      downloadCard.classList.add("hidden");
+      snakeStart();
+      startBtn.textContent = "pause";
+      canvas.focus();
+    }
 
     // keyboard controls
-const keyHandler = (e: KeyboardEvent) => {
-  const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
-  const editing = tag === "input" || tag === "textarea" || (e.target as HTMLElement)?.isContentEditable;
+    const keyHandler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      const editing = tag === "input" || tag === "textarea" || (e.target as HTMLElement)?.isContentEditable;
 
-  const isGameKey = [
-    "ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," ","Space","Enter","w","a","s","d",
-  ].includes(e.key);
+      const isGameKey = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " ", "Space", "Enter", "w", "a", "s", "d"].includes(
+        e.key
+      );
 
-  if (isGameKey && !editing) e.preventDefault();   // <-- always stop page scroll for these
+      if (isGameKey && !editing) e.preventDefault(); // <-- always stop page scroll for these
 
-  if (!running && (e.key === "Enter" || e.key === " ")) {
-    startGame();
-    return;
-  }
-  if (!running || paused) return;
+      if (!running && (e.key === "Enter" || e.key === " ")) {
+        startGame();
+        return;
+      }
+      if (!running || paused) return;
 
-  const map: Record<string, Point> = {
-    ArrowUp:{x:0,y:-1}, ArrowDown:{x:0,y:1}, ArrowLeft:{x:-1,y:0}, ArrowRight:{x:1,y:0},
-    w:{x:0,y:-1}, s:{x:0,y:1}, a:{x:-1,y:0}, d:{x:1,y:0},
-  };
-  const next = map[e.key];
-  if (!next) return;
-  if (next.x === -dir.x && next.y === -dir.y) return; // disallow 180° turns
-  pending = next;
-};
+      const map: Record<string, Point> = {
+        ArrowUp: { x: 0, y: -1 },
+        ArrowDown: { x: 0, y: 1 },
+        ArrowLeft: { x: -1, y: 0 },
+        ArrowRight: { x: 1, y: 0 },
+        w: { x: 0, y: -1 },
+        s: { x: 0, y: 1 },
+        a: { x: -1, y: 0 },
+        d: { x: 1, y: 0 },
+      };
+      const next = map[e.key];
+      if (!next) return;
+      if (next.x === -dir.x && next.y === -dir.y) return; // disallow 180° turns
+      pending = next;
+    };
 
     window.addEventListener("keydown", keyHandler);
 
@@ -683,8 +691,6 @@ const keyHandler = (e: KeyboardEvent) => {
     };
   }, [playerName, siteLabel]);
 
-  
-
   return (
     <div className="game-card">
       <div className="game-card__inner relative">
@@ -704,7 +710,13 @@ const keyHandler = (e: KeyboardEvent) => {
             </p>
 
             <div className="mt-5 flex flex-col sm:flex-row gap-3">
-              <a ref={downloadRef} id="download-card" className="btn-primary w-full sm:w-auto hidden" download="snake-collector-card.png" href="#">
+              <a
+                ref={downloadRef}
+                id="download-card"
+                className="btn-primary w-full sm:w-auto hidden"
+                download="snake-collector-card.png"
+                href="#"
+              >
                 download collector card
               </a>
               <button ref={continueBtnRef} id="continue-game" className="btn-outline w-full sm:w-auto">
@@ -720,10 +732,18 @@ const keyHandler = (e: KeyboardEvent) => {
             <p className="font-mono">// collect all the</p>
             <p className="font-mono">// cards. Have Fun!</p>
           </div>
+
           <div className="flex gap-2">
             <button ref={startBtnRef} id="start-game" className="btn-primary">
               play
             </button>
+
+            {/* NEW: only show if parent supplies handler */}
+            {onSwitchGame && (
+              <button type="button" className="btn-outline" onClick={onSwitchGame}>
+                switch game
+              </button>
+            )}
           </div>
         </div>
       </div>

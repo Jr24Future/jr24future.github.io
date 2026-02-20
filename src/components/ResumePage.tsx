@@ -127,11 +127,11 @@ function DownloadMenu() {
         </svg>
       </summary>
       <div className="absolute right-0 z-50 mt-2 min-w-[220px] rounded-xl border border-white/10 bg-slate-900/90 backdrop-blur p-2 shadow-xl">
-        <a className="block px-3 py-2 rounded-lg hover:bg-white/10" href="/resume.pdf" download>
+        <a className="block px-3 py-2 rounded-lg hover:bg-white/10" href="/Erroll_Barker_Resume.pdf" download>
           PDF (ATS-friendly)
         </a>
-        <a className="block px-3 py-2 rounded-lg hover:bg-white/10" href="/resume.png" download>
-          PNG (designed)
+        <a className="block px-3 py-2 rounded-lg hover:bg-white/10" href="/Erroll-Barker-Resume.pdf" download>
+          PDF (designed)
         </a>
       </div>
     </details>
