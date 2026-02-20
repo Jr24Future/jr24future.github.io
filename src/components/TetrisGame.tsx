@@ -320,9 +320,7 @@ export default function TetrisGame({ onSwitchGame }: Props) {
   const [runningUI, setRunningUI] = useState(false);
   const [pausedUI, setPausedUI] = useState(false);
   const [gameOverUI, setGameOverUI] = useState(false);
-  const [scoreUI, setScoreUI] = useState(0);
-  const [linesUI, setLinesUI] = useState(0);
-  const [levelUI, setLevelUI] = useState(0);
+
 
   // game state refs (authoritative)
   const boardRef = useRef<number[][]>(createBoard());
@@ -351,9 +349,6 @@ export default function TetrisGame({ onSwitchGame }: Props) {
     setRunningUI(runningRef.current);
     setPausedUI(pausedRef.current);
     setGameOverUI(gameOverRef.current);
-    setScoreUI(scoreRef.current);
-    setLinesUI(linesRef.current);
-    setLevelUI(levelRef.current);
   }
 
   function resetGame() {
@@ -426,7 +421,6 @@ export default function TetrisGame({ onSwitchGame }: Props) {
       posRef.current = nextPos;
       if (grantDropScore && dy > 0) {
         scoreRef.current += SOFT_DROP_BONUS;
-        setScoreUI(scoreRef.current);
       }
       return;
     }
@@ -465,7 +459,6 @@ export default function TetrisGame({ onSwitchGame }: Props) {
 
     const dropped = Math.max(0, y - posRef.current.y);
     scoreRef.current += dropped * HARD_DROP_BONUS;
-    setScoreUI(scoreRef.current);
 
     posRef.current = { x, y };
     lockPiece();
@@ -627,7 +620,6 @@ export default function TetrisGame({ onSwitchGame }: Props) {
         tryMove(0, 1);
         if (softDropHeldRef.current) {
           scoreRef.current += SOFT_DROP_BONUS;
-          setScoreUI(scoreRef.current);
         }
       }
     }
