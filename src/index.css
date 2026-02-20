@@ -261,7 +261,7 @@ body::after{
 }
 .cursor-none * { cursor: none !important; }
 
-:root { --editor-top-adjust: 0px; }    /* tweak to 1px if needed */
+:root { --editor-top-adjust: 0px; }    
 .editor-lines { margin-top: var(--editor-top-adjust); }
 
 .tab-dot { display:inline-block; width:10px; height:10px; border-radius:9999px;
