@@ -5,17 +5,12 @@ import TechTicker from "./TechTicker.tsx";
 import { useEffect, useRef, useState } from "react";
 
 type Stage = "init" | "peeked" | "liked" | "done";
-type GameView = "snake" | "tetris";
 
 export default function Hero() {
   const [showFluid, setShowFluid] = useState(false);
   const [stage, setStage] = useState<Stage>("init");
   const fluidTimer = useRef<number | null>(null);
 
-  // NEW: game switch state (snake <-> tetris placeholder for now)
-  const [gameView, setGameView] = useState<GameView>("snake");
-  const handleSwitchGame = () =>
-    setGameView((g) => (g === "snake" ? "tetris" : "snake"));
 
   // toast state (must be inside component)
   const [toast, setToast] = useState<string | null>(null);
