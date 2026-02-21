@@ -8,21 +8,20 @@ type Vec = { x: number; y: number };
 
 type Tetromino = {
   name: "I" | "O" | "T" | "S" | "Z" | "J" | "L";
-  id: number; // 1..7 for board cells
+  id: number; 
   rotations: number[][][]; // 4 matrices of 4x4
 };
 
 const COLS = 10;
 const ROWS = 20;
-const CELL = 18; // base cell size used for drawing (canvas scales to fit)
+const CELL = 18;
 
 const SOFT_DROP_BONUS = 1;
 const HARD_DROP_BONUS = 2;
 
-// Basic NES-ish scoring
 const SCORE_PER_LINES = [0, 100, 300, 500, 800];
 
-// Palette used for locked blocks (id -> color)
+// (id -> color)
 const COLORS: Record<number, string> = {
   0: "rgba(0,0,0,0)",
   1: "rgba(56,189,248,0.95)", // I
@@ -305,7 +304,7 @@ function clearLines(board: number[][]) {
 }
 
 function levelToDropMs(level: number) {
-  // Simple curve: starts 800ms, down to ~120ms
+  // Simple curve: starts 800ms, down to 120ms
   const base = 800;
   const min = 120;
   const ms = Math.floor(base * Math.pow(0.86, level));
@@ -315,32 +314,25 @@ function levelToDropMs(level: number) {
 export default function TetrisGame({ onSwitchGame }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const rafRef = useRef<number | null>(null);
-
   // lightweight UI state
   const [runningUI, setRunningUI] = useState(false);
   const [pausedUI, setPausedUI] = useState(false);
   const [gameOverUI, setGameOverUI] = useState(false);
-
-
-  // game state refs (authoritative)
+  
   const boardRef = useRef<number[][]>(createBoard());
   const pieceRef = useRef<Tetromino>(rand(PIECES));
   const rotRef = useRef(0);
   const posRef = useRef<Vec>({ x: 3, y: -1 });
-
   const runningRef = useRef(false);
   const pausedRef = useRef(false);
   const gameOverRef = useRef(false);
-
   const scoreRef = useRef(0);
   const linesRef = useRef(0);
   const levelRef = useRef(0);
-
   const lastTimeRef = useRef<number>(0);
   const accRef = useRef<number>(0);
   const dropMsRef = useRef<number>(levelToDropMs(0));
   const softDropHeldRef = useRef(false);
-
   function currentShape() {
     return pieceRef.current.rotations[rotRef.current];
   }
@@ -353,23 +345,18 @@ export default function TetrisGame({ onSwitchGame }: Props) {
 
   function resetGame() {
     boardRef.current = createBoard();
-
     scoreRef.current = 0;
     linesRef.current = 0;
     levelRef.current = 0;
     dropMsRef.current = levelToDropMs(0);
-
     pieceRef.current = rand(PIECES);
     rotRef.current = 0;
     posRef.current = { x: 3, y: -1 };
-
     lastTimeRef.current = 0;
     accRef.current = 0;
-
     runningRef.current = true;
     pausedRef.current = false;
     gameOverRef.current = false;
-
     syncUI();
   }
 
@@ -425,7 +412,7 @@ export default function TetrisGame({ onSwitchGame }: Props) {
       return;
     }
 
-    // If we attempted to move down but can't: lock
+    //lock if we cant move down
     if (dy === 1) lockPiece();
   }
 
@@ -497,22 +484,20 @@ export default function TetrisGame({ onSwitchGame }: Props) {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
 
-    // background
+    //background
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = "rgba(2,6,23,0.65)";
     ctx.fillRect(0, 0, w, h);
 
-    // Compute grid fit centered
+    //Compute grid fit centered
     const gridW = COLS * CELL;
     const gridH = ROWS * CELL;
     const ox = Math.floor((w - gridW) / 2);
     const oy = Math.floor((h - gridH) / 2);
-
     // board frame
     ctx.strokeStyle = "rgba(255,255,255,.12)";
     ctx.lineWidth = 1;
     ctx.strokeRect(ox - 1, oy - 1, gridW + 2, gridH + 2);
-
     // subtle grid lines
     ctx.strokeStyle = "rgba(255,255,255,.06)";
     ctx.beginPath();
@@ -527,7 +512,6 @@ export default function TetrisGame({ onSwitchGame }: Props) {
       ctx.lineTo(ox + gridW, y);
     }
     ctx.stroke();
-
     // locked blocks
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
@@ -537,7 +521,6 @@ export default function TetrisGame({ onSwitchGame }: Props) {
         ctx.fillRect(ox + c * CELL, oy + r * CELL, CELL - 1, CELL - 1);
       }
     }
-
     // ghost piece
     if (runningRef.current && !pausedRef.current && !gameOverRef.current) {
       const shape = currentShape();
@@ -601,7 +584,7 @@ export default function TetrisGame({ onSwitchGame }: Props) {
   function loop(t: number) {
     if (!canvasRef.current) return;
 
-    // Always draw (keeps UI responsive)
+    //keeps UI responsive
     if (!lastTimeRef.current) lastTimeRef.current = t;
     const dt = t - lastTimeRef.current;
     lastTimeRef.current = t;
@@ -629,7 +612,6 @@ export default function TetrisGame({ onSwitchGame }: Props) {
   }
 
   function startOrRestart() {
-    // Restart if game over, otherwise start fresh if not running.
     resetGame();
   }
 
@@ -639,7 +621,7 @@ export default function TetrisGame({ onSwitchGame }: Props) {
     syncUI();
   }
 
-  // Initial setup + RAF
+  //setup
   useEffect(() => {
     resizeCanvas();
     draw();
@@ -652,7 +634,7 @@ export default function TetrisGame({ onSwitchGame }: Props) {
 
     rafRef.current = requestAnimationFrame(loop);
 
-    // Auto-pause on tab hidden (prevents “catch up” drops)
+    // Auto-pause on tab hidden
     const onVis = () => {
       if (document.hidden && runningRef.current && !gameOverRef.current) {
         pausedRef.current = true;
@@ -670,7 +652,6 @@ export default function TetrisGame({ onSwitchGame }: Props) {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Keyboard controls
@@ -723,7 +704,6 @@ export default function TetrisGame({ onSwitchGame }: Props) {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const playButtonLabel = gameOverUI
